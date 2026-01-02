@@ -1,0 +1,10 @@
+target
+.m2
+.git
+.idea
+*.iml
+.classpath
+.project
+logs
+tmp
+build

@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      # Production should provide MONGODB_URI via environment/secret manager
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:banasthali_buddy}
+
+server:
+  port: ${PORT:8080}

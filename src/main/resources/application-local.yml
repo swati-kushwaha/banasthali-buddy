@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  data:
+    mongodb:
+      # Local development defaults but allow override via MONGODB_URI/MONGODB_DATABASE
+      uri: ${MONGODB_URI:mongodb://localhost:27017/banasthali_buddy}
+      database: ${MONGODB_DATABASE:banasthali_buddy}
+
+server:
+  port: 8080

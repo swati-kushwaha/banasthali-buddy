@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: backend
+  # Default active profile: uses LOCAL unless SPRING_PROFILES_ACTIVE is set
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:}
+      database: ${MONGODB_DATABASE:banasthali_buddy}
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
