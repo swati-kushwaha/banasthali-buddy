@@ -1,5 +1,6 @@
 package com.banasthali.backend;
 
+import com.banasthali.backend.repository.ItemRepository;
 import com.banasthali.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,13 +11,16 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class BackendApplicationTests {
 
-	// Mock the repository so Spring doesn't try to connect to MongoDB
+	// Mock repositories so Spring doesn't try to connect to MongoDB
 	@MockBean
 	private UserRepository userRepository;
 
+	@MockBean
+	private ItemRepository itemRepository;
+
 	@Test
 	void contextLoads() {
-		// Context loads with mocked repository
+		// Context loads with mocked repositories
 	}
 
 }

@@ -7,6 +7,20 @@ spring:
       # Placeholder URI for test profile; actual connection is mocked in tests
       uri: mongodb://localhost:27017/test
       database: test
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 server:
   port: 0
+
+# JWT for testing
+jwt:
+  secret: testSecretKeyForTestingOnlyNotForProductionUse123456789012345678901234567890
+  expiration: 86400000
+
+# Test file upload directory
+file:
+  upload-dir: ./test-uploads

@@ -7,6 +7,20 @@ spring:
       # Production should provide MONGODB_URI via environment/secret manager
       uri: ${MONGODB_URI}
       database: ${MONGODB_DATABASE:banasthali_buddy}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 server:
   port: ${PORT:8080}
+
+# JWT - Must be provided via environment variables in production
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# File upload directory
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:/app/uploads}

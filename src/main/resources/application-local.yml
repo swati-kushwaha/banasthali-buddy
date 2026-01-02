@@ -7,6 +7,20 @@ spring:
       # Local development defaults but allow override via MONGODB_URI/MONGODB_DATABASE
       uri: ${MONGODB_URI:mongodb://localhost:27017/banasthali_buddy}
       database: ${MONGODB_DATABASE:banasthali_buddy}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 server:
   port: 8080
+
+# JWT for local development (use a default secret for dev, but override in prod)
+jwt:
+  secret: ${JWT_SECRET:localDevSecretKeyDoNotUseInProduction123456789012345678901234567890}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# Local file upload directory
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:./uploads}
