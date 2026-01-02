@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  data:
+    mongodb:
+      # Placeholder URI for test profile; actual connection is mocked in tests
+      uri: mongodb://localhost:27017/test
+      database: test
+
+server:
+  port: 0
