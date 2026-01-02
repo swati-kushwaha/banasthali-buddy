@@ -1,5 +1,6 @@
 package com.banasthali.backend.model;
 
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -12,6 +13,12 @@ import java.util.Collection;
 import java.util.List;
 
 @Document(collection = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString(exclude = "password")
 public class User implements UserDetails {
 
     @Id
@@ -28,16 +35,7 @@ public class User implements UserDetails {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Constructors
-    public User() {}
-
-    public User(String username, String email, String password) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-    }
-
-    // UserDetails implementation
+    // UserDetails implementation (keep explicit to control behavior)
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role));
@@ -73,21 +71,8 @@ public class User implements UserDetails {
         return true;
     }
 
-    // Getters & Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-
-    public String getDisplayName() { return username; }
-    public void setUsername(String username) { this.username = username; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public void setPassword(String password) { this.password = password; }
-
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    // Convenience method for display name
+    public String getDisplayName() {
+        return username;
+    }
 }

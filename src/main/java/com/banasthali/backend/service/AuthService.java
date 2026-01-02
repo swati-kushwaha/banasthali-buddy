@@ -6,6 +6,8 @@ import com.banasthali.backend.dto.RegisterRequest;
 import com.banasthali.backend.model.User;
 import com.banasthali.backend.repository.UserRepository;
 import com.banasthali.backend.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -20,32 +24,19 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
 
-    public AuthService(UserRepository userRepository, 
-                       PasswordEncoder passwordEncoder,
-                       JwtTokenProvider jwtTokenProvider,
-                       AuthenticationManager authenticationManager) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.authenticationManager = authenticationManager;
-    }
-
     public AuthResponse register(RegisterRequest request) {
-        // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already registered");
         }
 
-        // Create new user
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole("STUDENT");
+        User user = User.builder()
+            .username(request.getUsername())
+            .email(request.getEmail())
+            .password(passwordEncoder.encode(request.getPassword()))
+            .role("STUDENT")
+            .build();
 
         User savedUser = userRepository.save(user);
-
-        // Generate JWT token
         String token = jwtTokenProvider.generateToken(savedUser.getEmail(), savedUser.getId());
 
         return AuthResponse.success(token, savedUser.getId(), savedUser.getDisplayName(), savedUser.getEmail());

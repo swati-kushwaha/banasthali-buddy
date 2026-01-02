@@ -5,6 +5,10 @@ import com.banasthali.backend.dto.ItemResponse;
 import com.banasthali.backend.model.Item;
 import com.banasthali.backend.model.User;
 import com.banasthali.backend.repository.ItemRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,44 +23,45 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class ItemService {
 
     private final ItemRepository itemRepository;
-    private final String uploadDir = "uploads/";
 
-    public ItemService(ItemRepository itemRepository) {
-        this.itemRepository = itemRepository;
-        // Create upload directory if it doesn't exist
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
+
+    @PostConstruct
+    public void init() {
         try {
             Files.createDirectories(Paths.get(uploadDir));
         } catch (IOException e) {
+            log.error("Could not create upload directory {}", uploadDir, e);
             throw new RuntimeException("Could not create upload directory", e);
         }
     }
 
     public ItemResponse createItem(ItemRequest request, MultipartFile image, User seller) {
-        // Validate price is positive
         if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Price must be positive");
         }
 
-        // Validate image is not empty
         if (image == null || image.isEmpty()) {
             throw new IllegalArgumentException("Image is required");
         }
 
-        // Save image and get URL
         String imageUrl = saveImage(image);
 
-        // Create item
-        Item item = new Item();
-        item.setTitle(request.getTitle());
-        item.setDescription(request.getDescription());
-        item.setPrice(request.getPrice());
-        item.setImageUrl(imageUrl);
-        item.setCategory(request.getCategory());
-        item.setSellerId(seller.getId());
-        item.setSellerName(seller.getDisplayName());
+        Item item = Item.builder()
+            .title(request.getTitle())
+            .description(request.getDescription())
+            .price(request.getPrice())
+            .imageUrl(imageUrl)
+            .category(request.getCategory())
+            .sellerId(seller.getId())
+            .sellerName(seller.getDisplayName())
+            .build();
 
         Item savedItem = itemRepository.save(item);
         return ItemResponse.fromItem(savedItem);
@@ -152,14 +157,15 @@ public class ItemService {
             if (originalFilename != null && originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
-            
+
             String filename = UUID.randomUUID().toString() + extension;
             Path targetPath = Paths.get(uploadDir, filename);
             Files.copy(image.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-            
+
             // Return relative URL for the image
             return "/uploads/" + filename;
         } catch (IOException e) {
+            log.error("Failed to save image", e);
             throw new RuntimeException("Failed to save image", e);
         }
     }

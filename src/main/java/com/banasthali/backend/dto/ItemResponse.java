@@ -1,10 +1,15 @@
 package com.banasthali.backend.dto;
 
 import com.banasthali.backend.model.Item;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ItemResponse {
 
     private String id;
@@ -18,51 +23,18 @@ public class ItemResponse {
     private boolean available;
     private LocalDateTime createdAt;
 
-    public ItemResponse() {}
-
     public static ItemResponse fromItem(Item item) {
-        ItemResponse response = new ItemResponse();
-        response.setId(item.getId());
-        response.setTitle(item.getTitle());
-        response.setDescription(item.getDescription());
-        response.setPrice(item.getPrice());
-        response.setImageUrl(item.getImageUrl());
-        response.setCategory(item.getCategory());
-        response.setSellerId(item.getSellerId());
-        response.setSellerName(item.getSellerName());
-        response.setAvailable(item.isAvailable());
-        response.setCreatedAt(item.getCreatedAt());
-        return response;
+        return ItemResponse.builder()
+            .id(item.getId())
+            .title(item.getTitle())
+            .description(item.getDescription())
+            .price(item.getPrice())
+            .imageUrl(item.getImageUrl())
+            .category(item.getCategory())
+            .sellerId(item.getSellerId())
+            .sellerName(item.getSellerName())
+            .available(item.isAvailable())
+            .createdAt(item.getCreatedAt())
+            .build();
     }
-
-    // Getters & Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
-
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
-
-    public String getSellerId() { return sellerId; }
-    public void setSellerId(String sellerId) { this.sellerId = sellerId; }
-
-    public String getSellerName() { return sellerName; }
-    public void setSellerName(String sellerName) { this.sellerName = sellerName; }
-
-    public boolean isAvailable() { return available; }
-    public void setAvailable(boolean available) { this.available = available; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
