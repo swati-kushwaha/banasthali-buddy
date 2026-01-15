@@ -35,6 +35,10 @@ public class User implements UserDetails {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    // For drivers: availability and current stationed post id
+    private Boolean driverAvailable = false;
+    private String currentPostId;
+
     // UserDetails implementation (keep explicit to control behavior)
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

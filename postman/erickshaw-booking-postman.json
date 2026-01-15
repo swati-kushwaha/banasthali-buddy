@@ -1,0 +1,111 @@
+{
+  "info": {
+    "name": "E-Rickshaw Booking - Minimal",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register Student",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{\n  \"username\": \"Alice\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"secret\",\n  \"role\": \"STUDENT\"\n}"},
+        "url": {"raw": "http://localhost:8080/api/auth/register","protocol":"http","host":["localhost"],"port":"8080","path":["api","auth","register"]}
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{\n  \"email\": \"alice@example.com\",\n  \"password\": \"secret\"\n}"},
+        "url": {"raw": "http://localhost:8080/api/auth/login","protocol":"http","host":["localhost"],"port":"8080","path":["api","auth","login"]}
+      }
+    },
+    {
+      "name": "List Posts",
+      "request": {"method":"GET","url":{"raw":"http://localhost:8080/api/posts","protocol":"http","host":["localhost"],"port":"8080","path":["api","posts"]}}
+    },
+    {
+      "name": "Request Booking (student)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{student_jwt}}"}],
+        "body": {"mode":"raw","raw":"{\n  \"pickupPostId\": \"<PICKUP_ID>\",\n  \"destinationPostId\": \"<DEST_ID>\"\n}"},
+        "url": {"raw": "http://localhost:8080/api/bookings/request","protocol":"http","host":["localhost"],"port":"8080","path":["api","bookings","request"]}
+      }
+    },
+    {
+      "name": "Driver Update Booking Status",
+      "request": {
+        "method": "PATCH",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{driver_jwt}}"}],
+        "body": {"mode":"raw","raw":"{\n  \"status\": \"ACCEPTED\"\n}"},
+        "url": {"raw": "http://localhost:8080/api/bookings/{{bookingId}}/status","protocol":"http","host":["localhost"],"port":"8080","path":["api","bookings","{{bookingId}}","status"]}
+      }
+    }
+    {
+      "name": "Get My Passenger Bookings",
+      "request": {
+        "method": "GET",
+        "header": [{"key":"Authorization","value":"Bearer {{student_jwt}}"}],
+        "url": {"raw": "http://localhost:8080/api/bookings/me/passenger","protocol":"http","host":["localhost"],"port":"8080","path":["api","bookings","me","passenger"]}
+      }
+    },
+    {
+      "name": "Get My Driver Bookings",
+      "request": {
+        "method": "GET",
+        "header": [{"key":"Authorization","value":"Bearer {{driver_jwt}}"}],
+        "url": {"raw": "http://localhost:8080/api/bookings/me/driver","protocol":"http","host":["localhost"],"port":"8080","path":["api","bookings","me","driver"]}
+      }
+    },
+    {
+      "name": "Create Post (admin)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{admin_jwt}}"}],
+        "body": {"mode":"raw","raw":"{\n  \"name\": \"Gate A\",\n  \"latitude\": 25.0,\n  \"longitude\": 75.0\n}"},
+        "url": {"raw": "http://localhost:8080/api/posts","protocol":"http","host":["localhost"],"port":"8080","path":["api","posts"]}
+      }
+    },
+    {
+      "name": "Delete Post (admin)",
+      "request": {
+        "method": "DELETE",
+        "header": [{"key":"Authorization","value":"Bearer {{admin_jwt}}"}],
+        "url": {"raw": "http://localhost:8080/api/posts/{{postId}}","protocol":"http","host":["localhost"],"port":"8080","path":["api","posts","{{postId}}"]}
+      }
+    },
+    {
+      "name": "Get All Items",
+      "request": {"method":"GET","url":{"raw":"http://localhost:8080/api/items","protocol":"http","host":["localhost"],"port":"8080","path":["api","items"]}}
+    },
+    {
+      "name": "Create Item (multipart)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Authorization","value":"Bearer {{student_jwt}}"}],
+        "body": {"mode":"formdata","formdata":[{"key":"title","value":"Bike","type":"text"},{"key":"description","value":"Old bike","type":"text"},{"key":"price","value":"500","type":"text"},{"key":"category","value":"Sports","type":"text"}]},
+        "url": {"raw": "http://localhost:8080/api/items","protocol":"http","host":["localhost"],"port":"8080","path":["api","items"]}
+      }
+    },
+    {
+      "name": "Update Item",
+      "request": {
+        "method": "PUT",
+        "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{student_jwt}}"}],
+        "body": {"mode":"raw","raw":"{\n  \"title\": \"Bike - updated\",\n  \"description\": \"Good condition\",\n  \"price\": 450\n}"},
+        "url": {"raw": "http://localhost:8080/api/items/{{itemId}}","protocol":"http","host":["localhost"],"port":"8080","path":["api","items","{{itemId}}"]}
+      }
+    },
+    {
+      "name": "Delete Item",
+      "request": {
+        "method": "DELETE",
+        "header": [{"key":"Authorization","value":"Bearer {{student_jwt}}"}],
+        "url": {"raw": "http://localhost:8080/api/items/{{itemId}}","protocol":"http","host":["localhost"],"port":"8080","path":["api","items","{{itemId}}"]}
+      }
+    }
+  ]
+}

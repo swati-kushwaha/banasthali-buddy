@@ -29,15 +29,17 @@ public class AuthService {
             throw new IllegalArgumentException("Email already registered");
         }
 
+        String role = request.getRole() != null ? request.getRole() : "PASSENGER";
+
         User user = User.builder()
             .username(request.getUsername())
             .email(request.getEmail())
             .password(passwordEncoder.encode(request.getPassword()))
-            .role("STUDENT")
+            .role(role)
             .build();
 
         User savedUser = userRepository.save(user);
-        String token = jwtTokenProvider.generateToken(savedUser.getEmail(), savedUser.getId());
+        String token = jwtTokenProvider.generateToken(savedUser.getEmail(), savedUser.getId(), savedUser.getRole());
 
         return AuthResponse.success(token, savedUser.getId(), savedUser.getDisplayName(), savedUser.getEmail());
     }
@@ -54,7 +56,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getId());
+        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getId(), user.getRole());
 
         return AuthResponse.success(token, user.getId(), user.getDisplayName(), user.getEmail());
     }
