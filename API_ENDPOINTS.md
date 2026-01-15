@@ -1,139 +1,264 @@
-# API Endpoints — E-Rickshaw Booking (Backend)
+# API Endpoints — Student Exchange Hub & E-Rickshaw Booking
 
-This document describes the main backend APIs for frontend integration: Authentication, Posts (predefined stations), Bookings (e-rickshaw workflow), and basic role-based rules. Use the Postman collection `postman/erickshaw-booking-postman.json` for runnable examples.
+This document provides a clear reference for frontend integration. It covers Authentication, Posts (predefined stations), Bookings (e-rickshaw workflow), and the Student Exchange Hub (items). Example cURL snippets are included for each endpoint. Import `postman/erickshaw-booking-postman.json` for runnable requests.
 
-## Auth
+Common notes
+- Base URL: `http://localhost:8080` (adjust for your environment)
+- All authenticated requests require header: `Authorization: Bearer <JWT>`
+- JWT contains `userId` and `role` claims. Server enforces roles via `ROLE_<role>` authorities.
 
-- POST /api/auth/register
-  - Auth: none
-  - Body (JSON):
-    ```json
-    {
-      "username": "Alice",
-      "email": "alice@example.com",
-      "password": "secret",
-      "role": "STUDENT" // STUDENT | DRIVER | ADMIN (optional)
-    }
-    ```
-  - Response (201):
-    ```json
-    {
-      "token": "<JWT>",
-      "userId": "...",
-      "name": "Alice",
-      "email": "alice@example.com"
-    }
-    ```
-
-- POST /api/auth/login
-  - Auth: none
-  - Body (JSON):
-    ```json
-    { "email": "alice@example.com", "password": "secret" }
-    ```
-  - Response (200): same shape as register; JWT includes `userId` and `role` claims.
-
-Notes: The JWT must be sent in requests as `Authorization: Bearer <token>`.
-
-## Posts (Predefined booking stations)
-
-- GET /api/posts
-  - Auth: none
-  - Response (200): list of posts
-    ```json
-    [ { "id":"p1", "name":"Gate A", "latitude":25.0, "longitude":75.0 } ]
-    ```
-
-- POST /api/posts
-  - Auth: Bearer (ADMIN)
-  - Body (JSON): `{ "name":"Gate A", "latitude":25.0, "longitude":75.0 }`
-  - Response (200): created Post object
-
-- DELETE /api/posts/{id}
-  - Auth: Bearer (ADMIN)
-  - Response: 204 No Content
-
-## Bookings (E-Rickshaw flow)
-
-Notes on booking model: `Booking` contains `id`, `passengerId`, `driverId` (optional), `pickupPostId`, `destinationPostId`, and `status` (PENDING, ACCEPTED, STARTED, ARRIVED, COMPLETED, CANCELLED).
-
-- POST /api/bookings/request
-  - Auth: Bearer (STUDENT)
-  - Body (JSON):
-    ```json
-    { "pickupPostId": "<pickupId>", "destinationPostId": "<destId>" }
-    ```
-  - Behavior: backend finds an available driver (role DRIVER with `driverAvailable == true`) — prefers drivers at the pickup post, otherwise chooses nearest by post coordinates. Booking saved with status `PENDING` and `driverId` if assigned.
-  - Response (201): created Booking object
-    ```json
-    {
-      "id":"b123",
-      "passengerId":"u1",
-      "driverId":"d1", // may be null if none assigned
-      "pickupPostId":"p1",
-      "destinationPostId":"p2",
-      "status":"PENDING"
-    }
-    ```
-
-- PATCH /api/bookings/{id}/status
-  - Auth: Bearer (DRIVER)
-  - Body (JSON): `{ "status": "ACCEPTED" }` (allowed: PENDING, ACCEPTED, STARTED, ARRIVED, COMPLETED, CANCELLED)
-  - Behavior: only the assigned driver may update the booking. On update, server sends a notification to the passenger via WebSocket topic `/topic/passenger/{passengerId}`.
-  - Response (200): updated Booking object
-
-- GET /api/bookings/me/passenger
-  - Auth: Bearer (STUDENT)
-  - Response (200): list of bookings where passengerId == current user
-
-- GET /api/bookings/me/driver
-  - Auth: Bearer (DRIVER)
-  - Response (200): list of bookings assigned to the driver
-
-WebSocket (minimal demo):
-- STOMP endpoint: `/ws` (SockJS enabled)
-- Driver subscribes: `/topic/driver/{driverId}` → receives new/assigned booking objects
-- Passenger subscribes: `/topic/passenger/{passengerId}` → receives booking updates
-
-## Items (Student Exchange) — summary endpoints
-
-- POST /api/items (multipart/form-data)
-  - Auth: Bearer (STUDENT)
-  - Form fields: `title`, `description`, `price`, `category`, optional `image`
-
-- GET /api/items
-  - Auth: none
-
-- GET /api/items/{id}
-  - Auth: none
-
-- PUT /api/items/{id}
-  - Auth: Bearer (STUDENT) — only the seller can update
-
-- DELETE /api/items/{id}
-  - Auth: Bearer (STUDENT) — only the seller can delete
-
-## Role summary & behavior
-- Student (STUDENT): can register/login, view posts, request bookings, view own bookings, create/list items.
-- Driver (DRIVER): can register/login, set `driverAvailable` (via User model field; update via user management UI you may implement), receive booking notifications, and update booking status.
-- Admin (ADMIN): manage posts (`POST /api/posts`, `DELETE /api/posts/{id}`), monitor bookings.
-
-## Headers & common notes
-- All authenticated requests must include `Authorization: Bearer <JWT>`.
-- JWT contains `userId` and `role` claims. Server uses `ROLE_<role>` authorities for `@PreAuthorize` checks.
-
-## Example request sequence (full booking lifecycle)
-1. Student registers and logs in → obtains `student_jwt`.
-2. Driver registers and logs in → obtains `driver_jwt` (driver must set `driverAvailable = true` and `currentPostId` via your UI/backend admin flow).
-3. Admin creates Posts (pickup/destination) if needed.
-4. Student requests booking (`POST /api/bookings/request`) → receives `bookingId`.
-5. Driver receives booking notification on `/topic/driver/{driverId}` or sees assigned booking via `GET /api/bookings/me/driver`.
-6. Driver accepts → `PATCH /api/bookings/{bookingId}/status` `{ "status":"ACCEPTED" }`.
-7. Driver updates `STARTED`, `ARRIVED`, `COMPLETED` similarly.
+Table of contents
+- Auth
+- Posts (Predefined Stations)
+- Bookings (E-Rickshaw)
+- Student Exchange Hub (Items)
+- WebSocket (minimal notifications)
+- Example full booking flow
 
 ---
 
-If you want, I can also add small example JSON responses per endpoint in separate files, or expand the Postman collection with pre-request scripts that extract and set JWT variables automatically. Commit below includes this file.
+## Auth
+
+1) Register
+- POST /api/auth/register
+- Auth: none
+- Body (JSON):
+
+```json
+{
+  "username": "Alice",
+  "email": "alice@example.com",
+  "password": "secret",
+  "role": "STUDENT"   
+}
+```
+
+- Response (201):
+
+```json
+{
+  "token": "<JWT>",
+  "userId": "u123",
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+cURL example:
+
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"Alice","email":"alice@example.com","password":"secret","role":"STUDENT"}'
+```
+
+2) Login
+- POST /api/auth/login
+- Auth: none
+- Body (JSON):
+
+```json
+{ "email": "alice@example.com", "password": "secret" }
+```
+
+- Response (200): same shape as Register. Save the `token` for authenticated calls.
+
+---
+
+## Posts (Predefined Stations)
+
+These are fixed pickup/drop stations where rides must start or end.
+
+1) List posts
+- GET /api/posts
+- Auth: none
+- Response (200):
+
+```json
+[ { "id":"p1", "name":"Gate A", "latitude":25.0, "longitude":75.0 } ]
+```
+
+cURL:
+
+```bash
+curl http://localhost:8080/api/posts
+```
+
+2) Create post (admin)
+- POST /api/posts
+- Auth: Bearer (ADMIN)
+- Body:
+
+```json
+{ "name": "Gate A", "latitude": 25.0, "longitude": 75.0 }
+```
+
+- Response (200): created post object.
+
+cURL:
+
+```bash
+curl -X POST http://localhost:8080/api/posts \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <ADMIN_JWT>' \
+  -d '{"name":"Gate A","latitude":25.0,"longitude":75.0}'
+```
+
+3) Delete post (admin)
+- DELETE /api/posts/{id}
+- Auth: Bearer (ADMIN)
+- Response: 204 No Content
+
+---
+
+## Bookings (E-Rickshaw)
+
+Booking model (summary):
+
+- id: string
+- passengerId: string
+- driverId: string | null
+- pickupPostId: string
+- destinationPostId: string
+- status: PENDING | ACCEPTED | STARTED | ARRIVED | COMPLETED | CANCELLED
+
+1) Request booking (student)
+- POST /api/bookings/request
+- Auth: Bearer (STUDENT)
+- Body:
+
+```json
+{ "pickupPostId": "p1", "destinationPostId": "p2" }
+```
+
+- Behavior: server finds an available driver (role DRIVER and `driverAvailable == true`). Preference: drivers at the pickup post; otherwise picks nearest by Haversine distance between driver current post and pickup post. Booking stored with `status = PENDING` and `driverId` if assigned.
+
+- Response (201): created booking
+
+```json
+{
+  "id":"b123",
+  "passengerId":"u1",
+  "driverId":"d1", 
+  "pickupPostId":"p1",
+  "destinationPostId":"p2",
+  "status":"PENDING"
+}
+```
+
+cURL:
+
+```bash
+curl -X POST http://localhost:8080/api/bookings/request \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <STUDENT_JWT>' \
+  -d '{"pickupPostId":"p1","destinationPostId":"p2"}'
+```
+
+2) Driver updates booking status
+- PATCH /api/bookings/{id}/status
+- Auth: Bearer (DRIVER)
+- Body: `{ "status": "ACCEPTED" }` (allowed values: PENDING, ACCEPTED, STARTED, ARRIVED, COMPLETED, CANCELLED)
+- Behavior: only assigned driver may update. On update, passenger is notified via WebSocket `/topic/passenger/{passengerId}`.
+- Response (200): updated booking object
+
+cURL:
+
+```bash
+curl -X PATCH http://localhost:8080/api/bookings/b123/status \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <DRIVER_JWT>' \
+  -d '{"status":"ACCEPTED"}'
+```
+
+3) Passenger booking history
+- GET /api/bookings/me/passenger
+- Auth: Bearer (STUDENT)
+- Response (200): list of bookings for the authenticated passenger
+
+4) Driver assigned bookings
+- GET /api/bookings/me/driver
+- Auth: Bearer (DRIVER)
+- Response (200): list of bookings assigned to the authenticated driver
+
+---
+
+## Student Exchange Hub (Items)
+
+Simple CRUD for item listings.
+
+1) Create item
+- POST /api/items
+- Auth: Bearer (STUDENT)
+- Content-Type: `multipart/form-data`
+- Form fields: `title` (string), `description` (string), `price` (number), `category` (string), optional `image` (file)
+- Response (201): created item object
+
+2) List items
+- GET /api/items
+- Auth: none
+- Response: array of items
+
+3) Search items
+- GET /api/items/search?query=term
+- Auth: none
+
+4) Get items by category
+- GET /api/items/category/{category}
+
+5) Update item
+- PUT /api/items/{id}
+- Auth: Bearer (STUDENT) — only seller may update
+
+6) Delete item
+- DELETE /api/items/{id}
+- Auth: Bearer (STUDENT) — only seller may delete
+
+---
+
+## WebSocket (minimal demo)
+
+- STOMP endpoint: `/ws` (SockJS enabled)
+- Driver subscribes to: `/topic/driver/{driverId}` — receives assigned/new booking objects.
+- Passenger subscribes to: `/topic/passenger/{passengerId}` — receives booking status updates.
+
+Message payload: Booking object (same as REST response)
+
+---
+
+## Errors / status codes (common)
+
+- 400 Bad Request — invalid input
+- 401 Unauthorized — missing/invalid JWT
+- 403 Forbidden — insufficient role/permission
+- 404 Not Found — resource not found (post, booking, item)
+- 500 Internal Server Error — unexpected server error
+
+Error response shape (example):
+
+```json
+{ "error": "Bad Request", "message": "pickupPostId is required" }
+```
+
+---
+
+## Example full booking lifecycle (ordered)
+
+1) Student registers → login → get `student_jwt`
+2) Driver registers → login → get `driver_jwt` and set `driverAvailable = true` & `currentPostId` (via your UI or user update flow)
+3) Admin creates pickup & destination posts (if not present)
+4) Student requests booking (`POST /api/bookings/request`) → gets `bookingId`
+5) Driver receives booking via WebSocket `/topic/driver/{driverId}` or polls `GET /api/bookings/me/driver`
+6) Driver accepts → `PATCH /api/bookings/{id}/status` `{ "status": "ACCEPTED" }`
+7) Driver updates to `STARTED`, `ARRIVED`, and `COMPLETED` similarly
+8) Student checks history `GET /api/bookings/me/passenger`
+
+---
+
+If you want I can also:
+- add full request/response JSON examples per endpoint as separate sample files, or
+- add Postman pre-request/test scripts to extract JWTs automatically in the collection.
+
 # Student Exchange Hub - API Endpoints Documentation
 
 > **Base URL:** `http://localhost:8080` (local) or your deployed URL  
