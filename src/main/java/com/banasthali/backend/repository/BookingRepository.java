@@ -1,9 +1,10 @@
 package com.banasthali.backend.repository;
 
-import com.banasthali.backend.model.Booking;
+import java.util.List;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.util.List;
+import com.banasthali.backend.model.Booking;
 
 public interface BookingRepository extends MongoRepository<Booking, String> {
     List<Booking> findByPassengerId(String passengerId);
