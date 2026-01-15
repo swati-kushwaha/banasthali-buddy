@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -47,11 +48,10 @@ public class ItemService {
             throw new IllegalArgumentException("Price must be positive");
         }
 
-        if (image == null || image.isEmpty()) {
-            throw new IllegalArgumentException("Image is required");
+        String imageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            imageUrl = saveImage(image);
         }
-
-        String imageUrl = saveImage(image);
 
         Item item = Item.builder()
             .title(request.getTitle())
@@ -61,6 +61,8 @@ public class ItemService {
             .category(request.getCategory())
             .sellerId(seller.getId())
             .sellerName(seller.getDisplayName())
+            .available(true)
+            .createdAt(LocalDateTime.now())
             .build();
 
         Item savedItem = itemRepository.save(item);

@@ -37,10 +37,14 @@ public class ItemController {
             @Parameter(description = "Item description") @RequestParam("description") String description,
             @Parameter(description = "Item price (must be positive)") @RequestParam("price") BigDecimal price,
             @Parameter(description = "Item category") @RequestParam(value = "category", required = false) String category,
-            @Parameter(description = "Item image") @RequestParam("image") MultipartFile image,
+            @Parameter(description = "Item image") @RequestParam(value = "image", required = false) MultipartFile image,
             @AuthenticationPrincipal User seller) {
         
         try {
+            if (seller == null) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Unauthorized", "message", "Authentication required"));
+            }
             ItemRequest request = new ItemRequest();
             request.setTitle(title);
             request.setDescription(description);
@@ -53,6 +57,8 @@ public class ItemController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    
 
     @GetMapping
     @Operation(summary = "Get all items", description = "Retrieves all available item listings")
@@ -98,6 +104,10 @@ public class ItemController {
             @Valid @RequestBody ItemRequest request,
             @AuthenticationPrincipal User seller) {
         try {
+            if (seller == null) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Unauthorized", "message", "Authentication required"));
+            }
             ItemResponse response = itemService.updateItem(id, request, seller);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -112,6 +122,10 @@ public class ItemController {
             @PathVariable String id,
             @AuthenticationPrincipal User seller) {
         try {
+            if (seller == null) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Unauthorized", "message", "Authentication required"));
+            }
             itemService.deleteItem(id, seller);
             return ResponseEntity.ok(Map.of("message", "Item deleted successfully"));
         } catch (IllegalArgumentException e) {
@@ -126,6 +140,10 @@ public class ItemController {
             @PathVariable String id,
             @AuthenticationPrincipal User seller) {
         try {
+            if (seller == null) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Unauthorized", "message", "Authentication required"));
+            }
             ItemResponse response = itemService.markAsSold(id, seller);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
