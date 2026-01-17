@@ -39,3 +39,4 @@ public class ERickshawBookingController {
         return ResponseEntity.ok(all);
     }
 }
+ 

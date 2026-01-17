@@ -1,5 +1,7 @@
 package com.banasthali.backend.service;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -34,30 +36,36 @@ public class AuthService {
         String role = request.getRole() != null ? request.getRole() : "PASSENGER";
 
         User user = User.builder()
-            .username(request.getUsername())
-            .email(request.getEmail())
-            .password(passwordEncoder.encode(request.getPassword()))
-            .role(role)
-            .build();
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(role)
+                .build();
 
-        User savedUser = userRepository.save(user);
-        String token = jwtTokenProvider.generateToken(savedUser.getEmail(), savedUser.getId(), savedUser.getRole());
-
-        return AuthResponse.success(token, savedUser.getId(), savedUser.getDisplayName(), savedUser.getEmail());
+        try {
+            User savedUser = userRepository.save(user);
+            String token = jwtTokenProvider.generateToken(savedUser.getEmail(), savedUser.getId(), savedUser.getRole());
+            return AuthResponse.success(token, savedUser.getId(), savedUser.getDisplayName(), savedUser.getEmail());
+        } catch (DuplicateKeyException e) {
+            // Another process may have inserted same email between existsByEmail check and save
+            throw new IllegalArgumentException("Email already registered");
+        } catch (DataAccessException e) {
+            log.error("Database error while registering user", e);
+            throw new IllegalStateException("Database error while creating user");
+        }
     }
 
     public AuthResponse login(LoginRequest request) {
         try {
             authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
         } catch (AuthenticationException e) {
-            // Normalize any authentication failure to a single message/status
             throw new IllegalArgumentException("Invalid email or password");
         }
 
         User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         String token = jwtTokenProvider.generateToken(user.getEmail(), user.getId(), user.getRole());
 
