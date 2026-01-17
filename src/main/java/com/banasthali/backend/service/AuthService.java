@@ -1,18 +1,20 @@
 package com.banasthali.backend.service;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.banasthali.backend.dto.AuthResponse;
 import com.banasthali.backend.dto.LoginRequest;
 import com.banasthali.backend.dto.RegisterRequest;
 import com.banasthali.backend.model.User;
 import com.banasthali.backend.repository.UserRepository;
 import com.banasthali.backend.security.JwtTokenProvider;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +51,8 @@ public class AuthService {
             authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
+            // Normalize any authentication failure to a single message/status
             throw new IllegalArgumentException("Invalid email or password");
         }
 
