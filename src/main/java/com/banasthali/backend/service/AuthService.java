@@ -1,6 +1,5 @@
 package com.banasthali.backend.service;
 
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,13 +27,18 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
 
+    // 🔹 SIGNUP
     public AuthResponse register(RegisterRequest request) {
+
+        // Check for duplicate email
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already registered");
+            return AuthResponse.message("Email already registered");
         }
 
+        // Default role
         String role = request.getRole() != null ? request.getRole() : "PASSENGER";
 
+        // Build user
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
@@ -43,32 +47,53 @@ public class AuthService {
                 .build();
 
         try {
+            // Save user in MongoDB
             User savedUser = userRepository.save(user);
-            String token = jwtTokenProvider.generateToken(savedUser.getEmail(), savedUser.getId(), savedUser.getRole());
-            return AuthResponse.success(token, savedUser.getId(), savedUser.getDisplayName(), savedUser.getEmail());
+
+            // Generate JWT token
+            String token = jwtTokenProvider.generateToken(
+                    savedUser.getEmail(),
+                    savedUser.getId(),
+                    savedUser.getRole()
+            );
+
+            // Return success response
+            return AuthResponse.success(token, savedUser.getId(), savedUser.getUsername(), savedUser.getEmail());
+
         } catch (DuplicateKeyException e) {
-            // Another process may have inserted same email between existsByEmail check and save
-            throw new IllegalArgumentException("Email already registered");
-        } catch (DataAccessException e) {
-            log.error("Database error while registering user", e);
-            throw new IllegalStateException("Database error while creating user");
+            log.warn("Duplicate email during registration: {}", request.getEmail());
+            return AuthResponse.message("Email already registered");
+        } catch (Exception e) {
+            log.error("Database error during signup", e);
+            return AuthResponse.message("Database error while creating user");
         }
     }
 
+    // 🔹 LOGIN
     public AuthResponse login(LoginRequest request) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
         } catch (AuthenticationException e) {
-            throw new IllegalArgumentException("Invalid email or password");
+            return AuthResponse.message("Invalid email or password");
         }
 
+        // Fetch user from DB
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElse(null);
 
-        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getId(), user.getRole());
+        if (user == null) {
+            return AuthResponse.message("User not found");
+        }
 
-        return AuthResponse.success(token, user.getId(), user.getDisplayName(), user.getEmail());
+        // Generate token
+        String token = jwtTokenProvider.generateToken(
+                user.getEmail(),
+                user.getId(),
+                user.getRole()
+        );
+
+        return AuthResponse.success(token, user.getId(), user.getUsername(), user.getEmail());
     }
 }

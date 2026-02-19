@@ -1,8 +1,8 @@
 package com.banasthali.backend.config;
 
-import com.banasthali.backend.security.JwtAuthenticationFilter;
-import com.banasthali.backend.security.RestAccessDeniedHandler;
-import com.banasthali.backend.security.RestAuthenticationEntryPoint;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,8 +23,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
+import com.banasthali.backend.security.JwtAuthenticationFilter;
+import com.banasthali.backend.security.RestAccessDeniedHandler;
+import com.banasthali.backend.security.RestAuthenticationEntryPoint;
 
 @Configuration
 @EnableWebSecurity
@@ -53,6 +54,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/driver/register", "/api/driver/login").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // Allow browsing items without auth

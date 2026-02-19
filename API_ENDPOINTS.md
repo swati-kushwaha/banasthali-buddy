@@ -171,7 +171,7 @@ curl -X PATCH http://localhost:8080/api/bookings/b123/status \
   -d '{"status":"ACCEPTED"}'
 ```
 
-3) Passenger booking history
+3) Passenger booking history 
 - GET /api/bookings/me/passenger
 - Auth: Bearer (STUDENT)
 - Response (200): list of bookings for the authenticated passenger
@@ -311,7 +311,7 @@ Register a new student account.
 ```json
 {
   "username": "john_doe",
-  "email": "john@banasthali.in",
+  "email": "john@banasthali.in", 
   "password": "securePassword123"
 }
 ```
@@ -896,7 +896,7 @@ curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
-    "email": "test@banasthali.in",
+    "email": "test@banasthali.in", 
     "password": "password123"
   }'
 ```
