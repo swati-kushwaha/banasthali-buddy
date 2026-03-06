@@ -12,10 +12,11 @@ public class AuthResponse {
     private String userId;
     private String username;
     private String email;
+    private String role;
     private String message;
 
-    public static AuthResponse success(String token, String userId, String username, String email) {
-        return new AuthResponse(token, userId, username, email, null);
+    public static AuthResponse success(String token, String userId, String username, String email, String role) {
+        return new AuthResponse(token, userId, username, email, role, null);
     }
 
     public static AuthResponse message(String message) {

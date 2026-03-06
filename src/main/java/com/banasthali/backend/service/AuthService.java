@@ -36,7 +36,7 @@ public class AuthService {
         }
 
         // Default role
-        String role = request.getRole() != null ? request.getRole() : "PASSENGER";
+        String role = request.getRole() != null ? request.getRole() : "STUDENT";
 
         // Build user
         User user = User.builder()
@@ -58,7 +58,13 @@ public class AuthService {
             );
 
             // Return success response
-            return AuthResponse.success(token, savedUser.getId(), savedUser.getUsername(), savedUser.getEmail());
+            return AuthResponse.success(
+                    token,
+                    savedUser.getId(),
+                    savedUser.getUsername(),
+                    savedUser.getEmail(),
+                    savedUser.getRole()
+            );
 
         } catch (DuplicateKeyException e) {
             log.warn("Duplicate email during registration: {}", request.getEmail());
@@ -94,6 +100,12 @@ public class AuthService {
                 user.getRole()
         );
 
-        return AuthResponse.success(token, user.getId(), user.getUsername(), user.getEmail());
+        return AuthResponse.success(
+                token,
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole()
+        );
     }
 }

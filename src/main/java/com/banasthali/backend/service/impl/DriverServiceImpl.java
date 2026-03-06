@@ -55,7 +55,13 @@ public class DriverServiceImpl implements DriverService {
         Driver saved = driverRepository.save(driver);
 
         String token = jwtTokenProvider.generateToken(saved.getEmail(), saved.getId(), "DRIVER");
-        return AuthResponse.success(token, saved.getId(), saved.getName(), saved.getEmail());
+        return AuthResponse.success(
+                token,
+                saved.getId(),
+                saved.getName(),
+                saved.getEmail(),
+                "DRIVER"
+        );
     }
 
     @Override
@@ -72,7 +78,13 @@ public class DriverServiceImpl implements DriverService {
         if (driver == null) return AuthResponse.message("Driver not found");
 
         String token = jwtTokenProvider.generateToken(driver.getEmail(), driver.getId(), "DRIVER");
-        return AuthResponse.success(token, driver.getId(), driver.getName(), driver.getEmail());
+        return AuthResponse.success(
+                token,
+                driver.getId(),
+                driver.getName(),
+                driver.getEmail(),
+                "DRIVER"
+        );
     }
 
     @Override
