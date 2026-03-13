@@ -82,17 +82,22 @@ public class BookingService {
     }
 
     public Booking updateStatus(String bookingId, Booking.BookingStatus status, String driverId) {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new IllegalArgumentException("Booking not found"));
-        // only assigned driver may update
-        if (booking.getDriverId() == null || !booking.getDriverId().equals(driverId)) {
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // allow driver to accept pending booking
+        if (booking.getStatus() == Booking.BookingStatus.PENDING) {
+            booking.setDriverId(driverId);
+        }
+
+        // after assignment only that driver can update
+        if (booking.getDriverId() != null && !booking.getDriverId().equals(driverId)) {
             throw new IllegalArgumentException("Not authorized to update booking");
         }
+
         booking.setStatus(status);
-        Booking saved = bookingRepository.save(booking);
 
-        // notify passenger
-        messagingTemplate.convertAndSend("/topic/passenger/" + booking.getPassengerId(), saved);
-
-        return saved;
+        return bookingRepository.save(booking);
     }
 }

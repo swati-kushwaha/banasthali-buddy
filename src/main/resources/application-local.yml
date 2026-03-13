@@ -5,8 +5,8 @@ spring:
   data:
     mongodb:
       # Local development defaults but allow override via MONGODB_URI/MONGODB_DATABASE
-      uri: ${MONGODB_URI:mongodb://localhost:27017/banasthali_buddy}
-      database: ${MONGODB_DATABASE:banasthali_buddy}
+      uri: mongodb+srv://banasthali_buddy:banasthali_buddy2027@cluster0.mz5eyzf.mongodb.net/?appName=Cluster0
+      database: banasthali_buddy
   servlet:
     multipart:
       enabled: true
