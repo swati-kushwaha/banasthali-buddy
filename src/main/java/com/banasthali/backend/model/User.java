@@ -31,18 +31,30 @@ public class User implements UserDetails {
 
     private String password;
 
-    private String role = "STUDENT";
+    private Role role = Role.STUDENT;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // For drivers: availability and current stationed post id
     private Boolean driverAvailable = false;
     private String currentPostId;
+    // For driver location fields
+    private Double latitude;
+    private Double longitude;
+    private LocalDateTime lastLocationUpdate;
+
+
 
     // UserDetails implementation (keep explicit to control behavior)
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+
+        return List.of(
+
+                new SimpleGrantedAuthority("ROLE_" + role.name())
+
+        );
+
     }
 
     @Override

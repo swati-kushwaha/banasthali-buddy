@@ -4,8 +4,6 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import com.banasthali.backend.dto.AuthResponse;
@@ -15,124 +13,132 @@ import com.banasthali.backend.dto.driver.DriverRegisterRequest;
 import com.banasthali.backend.dto.driver.DriverStatusUpdateRequest;
 import com.banasthali.backend.dto.driver.DriverResponseDTO;
 import com.banasthali.backend.model.Booking;
-import com.banasthali.backend.model.Driver;
-import com.banasthali.backend.repository.DriverRepository;
 import com.banasthali.backend.service.DriverService;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import jakarta.validation.Valid;
-
 import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/api/driver")
 @RequiredArgsConstructor
+
 public class DriverController {
 
     private final DriverService driverService;
-    private final DriverRepository driverRepository;
+
 
     @PostMapping("/register")
-    @Operation(summary = "Register driver", description = "Register a new driver. Returns JWT token on success.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Driver registered and token returned",
-                    content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content)
-    })
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody DriverRegisterRequest request) {
-        AuthResponse response = driverService.registerDriver(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<AuthResponse> register(
+
+            @RequestBody
+            DriverRegisterRequest request) {
+
+        return ResponseEntity.ok(
+
+                driverService.registerDriver(
+                        request
+                )
+        );
     }
+
 
     @PostMapping("/login")
-    @Operation(summary = "Driver login", description = "Authenticate driver and return JWT token.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Authenticated", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
-        @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content),
-        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
-    })
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody DriverLoginRequest request) {
-        AuthResponse response = driverService.loginDriver(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<AuthResponse> login(
+
+            @RequestBody
+            DriverLoginRequest request) {
+
+        return ResponseEntity.ok(
+
+                driverService.loginDriver(
+                        request
+                )
+        );
     }
+
 
     @PatchMapping("/status")
-    @Operation(summary = "Update online status", description = "Update driver's online/offline status. Requires driver authentication.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Status updated", content = @Content(schema = @Schema(implementation = DriverResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
-        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Driver not found", content = @Content)
-    })
-    public ResponseEntity<com.banasthali.backend.dto.driver.DriverResponseDTO> updateStatus(@Valid @RequestBody DriverStatusUpdateRequest request) {
-        String email = currentUserEmail();
-        com.banasthali.backend.model.Driver driver = driverRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("Driver not found"));
-        com.banasthali.backend.dto.driver.DriverResponseDTO updated = driverService.updateOnlineStatus(driver.getId(), request.getOnline());
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<DriverResponseDTO> updateStatus(
+
+            Authentication auth,
+
+            @RequestBody
+            DriverStatusUpdateRequest request) {
+
+        String email =
+                auth.getName();
+
+        return ResponseEntity.ok(
+
+                driverService.updateOnlineStatus(
+
+                        email,
+
+                        request.getOnline()
+
+                )
+        );
     }
+
 
     @PutMapping("/location")
-    @Operation(summary = "Update location", description = "Update driver's geo location. Broadcasts location DTO to subscribers on success.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Location updated", content = @Content(schema = @Schema(implementation = DriverResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
-        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Driver not found", content = @Content)
-    })
-    public ResponseEntity<com.banasthali.backend.dto.driver.DriverResponseDTO> updateLocation(@Valid @RequestBody DriverLocationUpdateRequest request) {
-        String email = currentUserEmail();
-        com.banasthali.backend.model.Driver driver = driverRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("Driver not found"));
-        com.banasthali.backend.dto.driver.DriverResponseDTO updated = driverService.updateLocation(driver.getId(), request);
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<DriverResponseDTO> updateLocation(
+
+            Authentication auth,
+
+            @RequestBody
+            DriverLocationUpdateRequest request) {
+
+        String email =
+                auth.getName();
+
+        return ResponseEntity.ok(
+
+                driverService.updateLocation(
+
+                        email,
+
+                        request
+
+                )
+        );
     }
+
 
     @GetMapping("/profile")
-    @Operation(summary = "Get profile", description = "Retrieve authenticated driver's profile information.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Driver profile", content = @Content(schema = @Schema(implementation = DriverResponseDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
-        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Driver not found", content = @Content)
-    })
-    public ResponseEntity<com.banasthali.backend.dto.driver.DriverResponseDTO> getProfile() {
-        String email = currentUserEmail();
-        com.banasthali.backend.model.Driver driver = driverRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("Driver not found"));
-        com.banasthali.backend.dto.driver.DriverResponseDTO profile = driverService.getDriverProfile(driver.getId());
-        return ResponseEntity.ok(profile);
+    public ResponseEntity<DriverResponseDTO> getProfile(
+
+            Authentication auth) {
+
+        String email =
+                auth.getName();
+
+        return ResponseEntity.ok(
+
+                driverService.getDriverProfile(
+
+                        email
+
+                )
+        );
     }
+
 
     @GetMapping("/rides")
-    @Operation(summary = "Get ride history", description = "Retrieve list of bookings for the authenticated driver.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "List of bookings", content = @Content(schema = @Schema(implementation = Booking.class))),
-        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
-        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
-        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Driver not found", content = @Content)
-    })
-    public ResponseEntity<List<Booking>> getRides() {
-        String email = currentUserEmail();
-        Driver driver = driverRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("Driver not found"));
-        List<Booking> rides = driverService.getRideHistory(driver.getId());
-        return ResponseEntity.ok(rides);
+    public ResponseEntity<List<Booking>> getRides(
+
+            Authentication auth) {
+
+        String email =
+                auth.getName();
+
+        return ResponseEntity.ok(
+
+                driverService.getRideHistory(
+
+                        email
+
+                )
+        );
     }
 
-    private String currentUserEmail() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) throw new IllegalArgumentException("Unauthenticated");
-        Object principal = auth.getPrincipal();
-        if (principal instanceof UserDetails) {
-            return ((UserDetails) principal).getUsername();
-        }
-        return String.valueOf(principal);
-    }
 }

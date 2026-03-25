@@ -4,8 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.banasthali.backend.dto.BookingRequest;
@@ -13,7 +12,6 @@ import com.banasthali.backend.dto.StatusUpdateRequest;
 import com.banasthali.backend.model.Booking;
 import com.banasthali.backend.model.User;
 import com.banasthali.backend.repository.BookingRepository;
-import com.banasthali.backend.repository.UserRepository;
 import com.banasthali.backend.service.BookingService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,85 +26,134 @@ public class BookingController {
 
     private final BookingService bookingService;
     private final BookingRepository bookingRepository;
-    private final UserRepository userRepository;
 
-    // STUDENT requests a ride
+
+    // STUDENT REQUEST BOOKING
     @PostMapping("/request")
-    @PreAuthorize("hasRole('STUDENT')")
-    @Operation(summary = "Student requests a booking from a pickup post")
-    public ResponseEntity<Booking> requestBooking(@RequestBody BookingRequest request) {
+    @PreAuthorize("hasRole('STUDENT') or hasRole('PASSENGER')")
+    @Operation(summary = "Request a booking from a pickup post")
+    public ResponseEntity<Booking> requestBooking(
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+            @AuthenticationPrincipal User passenger,
 
-        User student = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            @RequestBody BookingRequest request
+    ){
+
+        if (passenger == null)
+
+            return ResponseEntity.status(401).build();
 
         Booking booking = bookingService.requestBooking(
-                student.getId(),
+
+                passenger.getId(),
+
                 request.getPickupPostId(),
+
                 request.getDestinationPostId()
+
         );
 
         return ResponseEntity.status(201).body(booking);
+
     }
 
-    // DRIVER updates booking status
+
+    // DRIVER UPDATE STATUS
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('DRIVER')")
     @Operation(summary = "Driver updates booking status")
     public ResponseEntity<Booking> updateStatus(
+
             @PathVariable String id,
-            @RequestBody StatusUpdateRequest req) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+            @AuthenticationPrincipal User driver,
 
-        User driver = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+            @RequestBody StatusUpdateRequest request
+    ){
 
-        Booking.BookingStatus status = Booking.BookingStatus.valueOf(req.getStatus());
+        if (driver == null)
+
+            return ResponseEntity.status(401).build();
+
+        Booking.BookingStatus status =
+
+                Booking.BookingStatus.valueOf(request.getStatus());
 
         Booking booking = bookingService.updateStatus(
+
                 id,
+
                 status,
+
                 driver.getId()
+
         );
 
         return ResponseEntity.ok(booking);
+
     }
 
-    // STUDENT booking history
+
+    // STUDENT BOOKINGS (NEW API)
     @GetMapping("/me/student")
     @PreAuthorize("hasRole('STUDENT')")
-    @Operation(summary = "Get bookings for authenticated student")
-    public ResponseEntity<List<Booking>> myStudentBookings() {
+    public ResponseEntity<List<Booking>> myStudentBookings(
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+            @AuthenticationPrincipal User student
+    ){
 
-        User student = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (student == null)
 
-        List<Booking> bookings = bookingRepository.findByPassengerId(student.getId());
+            return ResponseEntity.status(401).build();
 
-        return ResponseEntity.ok(bookings);
+        return ResponseEntity.ok(
+
+                bookingRepository.findByPassengerId(student.getId())
+
+        );
+
     }
 
-    // DRIVER booking history
+
+    // PASSENGER BOOKINGS (old)
+    @GetMapping("/me/passenger")
+    @PreAuthorize("hasRole('STUDENT') or hasRole('PASSENGER')")
+    public ResponseEntity<List<Booking>> myPassengerBookings(
+
+            @AuthenticationPrincipal User passenger
+    ){
+
+        if (passenger == null)
+
+            return ResponseEntity.status(401).build();
+
+        return ResponseEntity.ok(
+
+                bookingRepository.findByPassengerId(passenger.getId())
+
+        );
+
+    }
+
+
+    // DRIVER BOOKINGS
     @GetMapping("/me/driver")
     @PreAuthorize("hasRole('DRIVER')")
-    @Operation(summary = "Get bookings assigned to authenticated driver")
-    public ResponseEntity<List<Booking>> myDriverBookings() {
+    public ResponseEntity<List<Booking>> myDriverBookings(
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+            @AuthenticationPrincipal User driver
+    ){
 
-        User driver = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+        if (driver == null)
 
-        List<Booking> bookings = bookingRepository.findByDriverId(driver.getId());
+            return ResponseEntity.status(401).build();
 
-        return ResponseEntity.ok(bookings);
+        return ResponseEntity.ok(
+
+                bookingRepository.findByDriverId(driver.getId())
+
+        );
+
     }
+
 }

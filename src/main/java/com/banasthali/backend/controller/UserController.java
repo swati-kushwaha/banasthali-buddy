@@ -2,6 +2,7 @@ package com.banasthali.backend.controller;
 
 import com.banasthali.backend.dto.ChangePasswordRequest;
 import com.banasthali.backend.dto.DriverAvailabilityRequest;
+import com.banasthali.backend.dto.LocationUpdateRequest;
 import com.banasthali.backend.dto.UpdateProfileRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.banasthali.backend.model.User;
 import com.banasthali.backend.service.UserService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -80,6 +83,30 @@ public class UserController {
                 request.getAvailable()
 
         );
+
+    }
+    @PatchMapping("/driver/location")
+    @PreAuthorize("hasRole('DRIVER')")
+    public User updateLocation(
+
+            @AuthenticationPrincipal User user,
+
+            @RequestBody LocationUpdateRequest request
+    ){
+
+        return userService.updateDriverLocation(
+
+                user,
+                request.getLatitude(),
+                request.getLongitude()
+
+        );
+
+    }
+    @GetMapping("/bus/location")
+    public List<User> getActiveBuses(){
+
+        return userService.getActiveBuses();
 
     }
 
