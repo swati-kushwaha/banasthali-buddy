@@ -10,10 +10,31 @@ import com.banasthali.backend.dto.driver.DriverResponseDTO;
 import com.banasthali.backend.model.Booking;
 
 public interface DriverService {
-    AuthResponse registerDriver(DriverRegisterRequest request);
-    AuthResponse loginDriver(DriverLoginRequest request);
-    DriverResponseDTO updateOnlineStatus(String driverId, boolean online);
-    DriverResponseDTO updateLocation(String driverId, DriverLocationUpdateRequest request);
-    DriverResponseDTO getDriverProfile(String driverId);
-    List<Booking> getRideHistory(String driverId);
+
+    AuthResponse registerDriver(
+            DriverRegisterRequest request
+    );
+
+    AuthResponse loginDriver(
+            DriverLoginRequest request
+    );
+
+    DriverResponseDTO updateOnlineStatus(
+            String email,
+            boolean online
+    );
+
+    DriverResponseDTO updateLocation(
+            String email,
+            DriverLocationUpdateRequest request
+    );
+
+    DriverResponseDTO getDriverProfile(
+            String email
+    );
+
+    List<Booking> getRideHistory(
+            String email
+    );
+
 }

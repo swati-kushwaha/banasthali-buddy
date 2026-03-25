@@ -5,6 +5,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.banasthali.backend.model.User;
 import com.banasthali.backend.repository.UserRepository;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class UserService {
@@ -45,6 +49,27 @@ public class UserService {
         user.setDriverAvailable(available);
 
         return userRepository.save(user);
+
+    }
+    public User updateDriverLocation(
+            User user,
+            Double latitude,
+            Double longitude){
+
+        user.setLatitude(latitude);
+        user.setLongitude(longitude);
+        user.setLastLocationUpdate(LocalDateTime.now());
+
+        return userRepository.save(user);
+
+    }
+    @GetMapping("/bus/location")
+    public List<User> getActiveBuses(){
+
+        return userRepository.findByRoleAndDriverAvailable(
+                "DRIVER",
+                true
+        );
 
     }
 }

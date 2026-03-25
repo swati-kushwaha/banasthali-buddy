@@ -81,23 +81,102 @@ public class BookingService {
         return R * c;
     }
 
-    public Booking updateStatus(String bookingId, Booking.BookingStatus status, String driverId) {
+    public Booking updateStatus(
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+            String bookingId,
 
-        // allow driver to accept pending booking
-        if (booking.getStatus() == Booking.BookingStatus.PENDING) {
+            Booking.BookingStatus status,
+
+            String driverId
+    ){
+
+        Booking booking = bookingRepository
+
+                .findById(bookingId)
+
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Booking not found"));
+
+
+    /*
+       If booking has no driver yet,
+       assign current driver automatically
+    */
+        if(booking.getDriverId() == null){
+
             booking.setDriverId(driverId);
+
         }
 
-        // after assignment only that driver can update
-        if (booking.getDriverId() != null && !booking.getDriverId().equals(driverId)) {
-            throw new IllegalArgumentException("Not authorized to update booking");
+
+    /*
+       Only assigned driver can update status
+    */
+        if(!booking.getDriverId().equals(driverId)){
+
+            throw new IllegalArgumentException(
+
+                    "Not authorized to update booking"
+
+            );
+
         }
+
 
         booking.setStatus(status);
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+
+        // notify passenger
+        messagingTemplate.convertAndSend(
+
+                "/topic/passenger/" + booking.getPassengerId(),
+
+                saved
+
+        );
+
+
+        return saved;
+
+    }
+
+    private double calculateETA(
+
+            double busLat,
+            double busLng,
+            double stopLat,
+            double stopLng
+    ){
+
+        double R = 6371; // earth radius km
+
+        double dLat = Math.toRadians(stopLat - busLat);
+        double dLon = Math.toRadians(stopLng - busLng);
+
+        double a =
+                Math.sin(dLat/2) * Math.sin(dLat/2)
+                        +
+                        Math.cos(Math.toRadians(busLat))
+                                *
+                                Math.cos(Math.toRadians(stopLat))
+                                *
+                                Math.sin(dLon/2)
+                                *
+                                Math.sin(dLon/2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        double distance = R * c; // distance in KM
+
+
+        double avgBusSpeed = 25.0; // assume 25 km/hr inside campus
+
+
+        double timeHours = distance / avgBusSpeed;
+
+
+        return timeHours * 60; // return minutes
     }
 }

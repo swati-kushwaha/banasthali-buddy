@@ -2,122 +2,195 @@ package com.banasthali.backend.service.impl;
 
 import java.util.List;
 
-import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.banasthali.backend.dto.AuthResponse;
 import com.banasthali.backend.dto.driver.DriverLocationUpdateRequest;
 import com.banasthali.backend.dto.driver.DriverLoginRequest;
 import com.banasthali.backend.dto.driver.DriverRegisterRequest;
+import com.banasthali.backend.dto.driver.DriverResponseDTO;
 import com.banasthali.backend.model.Booking;
-import com.banasthali.backend.model.Driver;
-import com.banasthali.backend.repository.BookingRepository;
-import com.banasthali.backend.repository.DriverRepository;
-import com.banasthali.backend.security.JwtTokenProvider;
+import com.banasthali.backend.model.Role;
+import com.banasthali.backend.model.User;
+import com.banasthali.backend.repository.UserRepository;
 import com.banasthali.backend.service.DriverService;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class DriverServiceImpl implements DriverService {
 
-    private final DriverRepository driverRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final AuthenticationManager authenticationManager;
-    private final BookingRepository bookingRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    @Autowired
+    private UserRepository userRepository;
 
+
+
+    // LOGIN DRIVER
     @Override
-    public AuthResponse registerDriver(DriverRegisterRequest request) {
-        if (driverRepository.findByEmail(request.getEmail()).isPresent()) {
-            return AuthResponse.message("Email already registered");
+    public AuthResponse loginDriver(DriverLoginRequest request){
+
+        User user = userRepository
+
+                .findByEmail(request.getEmail())
+
+                .orElseThrow(() ->
+                        new RuntimeException("Driver not found"));
+
+
+        if(!user.getRole().equals(Role.DRIVER)){
+
+            throw new RuntimeException("User is not DRIVER");
+
         }
 
-        Driver driver = Driver.builder()
-                .name(request.getName())
+        AuthResponse response = new AuthResponse();
+
+        response.setEmail(user.getEmail());
+
+        response.setRole("DRIVER");
+
+        response.setMessage("Login successful");
+
+        return response;
+
+    }
+
+
+
+    // DRIVER PROFILE
+    @Override
+    public DriverResponseDTO getDriverProfile(String email){
+
+        User user = userRepository
+
+                .findByEmail(email)
+
+                .orElseThrow(() ->
+                        new RuntimeException("Driver not found"));
+
+
+        if(!user.getRole().equals(Role.DRIVER)){
+
+            throw new RuntimeException("User is not DRIVER");
+
+        }
+
+        return mapToDTO(user);
+
+    }
+
+
+
+    // ONLINE STATUS
+    @Override
+    public DriverResponseDTO updateOnlineStatus(String email, boolean online){
+
+        User user = userRepository
+
+                .findByEmail(email)
+
+                .orElseThrow(() ->
+                        new RuntimeException("Driver not found"));
+
+
+        user.setDriverAvailable(online);
+
+        userRepository.save(user);
+
+        return mapToDTO(user);
+
+    }
+
+
+
+    // UPDATE LOCATION
+    @Override
+    public DriverResponseDTO updateLocation(
+
+            String email,
+
+            DriverLocationUpdateRequest request){
+
+        User user = userRepository
+
+                .findByEmail(email)
+
+                .orElseThrow(() ->
+                        new RuntimeException("Driver not found"));
+
+
+        user.setLatitude(request.getLatitude());
+
+        user.setLongitude(request.getLongitude());
+
+        userRepository.save(user);
+
+        return mapToDTO(user);
+
+    }
+
+
+
+    // RIDE HISTORY (optional)
+    @Override
+    public List<Booking> getRideHistory(String email){
+
+        return List.of();
+
+    }
+
+
+
+    // REGISTER DRIVER
+    @Override
+    public AuthResponse registerDriver(
+
+            DriverRegisterRequest request){
+
+        User user = User.builder()
+
+                .username(request.getName())
+
                 .email(request.getEmail())
-                .phone(request.getPhone())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .vehicleNumber(request.getVehicleNumber())
-                .licenseNumber(request.getLicenseNumber())
-                .isOnline(false)
+
+                .password(request.getPassword())
+
+                .role(Role.DRIVER)
+
+                .driverAvailable(false)
+
                 .build();
 
-        Driver saved = driverRepository.save(driver);
 
-        String token = jwtTokenProvider.generateToken(saved.getEmail(), saved.getId(), "DRIVER");
-        return AuthResponse.success(
-                token,
-                saved.getId(),
-                saved.getName(),
-                saved.getEmail(),
-                "DRIVER"
-        );
+        userRepository.save(user);
+
+
+        AuthResponse response = new AuthResponse();
+
+        response.setEmail(user.getEmail());
+
+        response.setRole("DRIVER");
+
+        response.setMessage("Driver registered");
+
+        return response;
+
     }
 
-    @Override
-    public AuthResponse loginDriver(DriverLoginRequest request) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
-        } catch (AuthenticationException e) {
-            return AuthResponse.message("Invalid email or password");
-        }
 
-        Driver driver = driverRepository.findByEmail(request.getEmail()).orElse(null);
-        if (driver == null) return AuthResponse.message("Driver not found");
 
-        String token = jwtTokenProvider.generateToken(driver.getEmail(), driver.getId(), "DRIVER");
-        return AuthResponse.success(
-                token,
-                driver.getId(),
-                driver.getName(),
-                driver.getEmail(),
-                "DRIVER"
-        );
-    }
+    // convert User → DriverResponseDTO
+    private DriverResponseDTO mapToDTO(User user){
 
-    @Override
-    public com.banasthali.backend.dto.driver.DriverResponseDTO updateOnlineStatus(String driverId, boolean online) {
-        Driver driver = driverRepository.findById(driverId).orElseThrow(() -> new IllegalArgumentException("Driver not found"));
-        driver.setIsOnline(online);
-        Driver saved = driverRepository.save(driver);
-        // notify subscribers about status change (broadcast DTO)
-        com.banasthali.backend.dto.driver.DriverResponseDTO dto = com.banasthali.backend.mapper.DriverMapper.toDTO(saved);
-        messagingTemplate.convertAndSend("/topic/driver-location/" + driverId, dto);
+        DriverResponseDTO dto = new DriverResponseDTO();
+
+        dto.setId(user.getId());
+
+        dto.setName(user.getUsername());
+
+        dto.setEmail(user.getEmail());
+
         return dto;
+
     }
 
-    @Override
-    public com.banasthali.backend.dto.driver.DriverResponseDTO updateLocation(String driverId, DriverLocationUpdateRequest request) {
-        Driver driver = driverRepository.findById(driverId).orElseThrow(() -> new IllegalArgumentException("Driver not found"));
-        GeoJsonPoint point = new GeoJsonPoint(request.getLongitude(), request.getLatitude());
-        driver.setLocation(point);
-        Driver saved = driverRepository.save(driver);
-
-        com.banasthali.backend.dto.driver.DriverResponseDTO dto = com.banasthali.backend.mapper.DriverMapper.toDTO(saved);
-        messagingTemplate.convertAndSend("/topic/driver-location/" + driverId, dto);
-        return dto;
-    }
-
-    @Override
-    public com.banasthali.backend.dto.driver.DriverResponseDTO getDriverProfile(String driverId) {
-        Driver d = driverRepository.findById(driverId).orElseThrow(() -> new IllegalArgumentException("Driver not found"));
-        return com.banasthali.backend.mapper.DriverMapper.toDTO(d);
-    }
-
-    @Override
-    public List<Booking> getRideHistory(String driverId) {
-        return bookingRepository.findByDriverId(driverId);
-    }
 }

@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 public class ItemService {
 
     private final ItemRepository itemRepository;
+    private final FileStorageService fileStorageService;
 
     @Value("${file.upload-dir:uploads}")
     private String uploadDir;
@@ -43,30 +44,50 @@ public class ItemService {
         }
     }
 
-    public ItemResponse createItem(ItemRequest request, MultipartFile image, User seller) {
-        if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Price must be positive");
-        }
+    public ItemResponse createItem(ItemRequest request,
+                                   MultipartFile image,
+                                   User seller){
 
         String imageUrl = null;
-        if (image != null && !image.isEmpty()) {
-            imageUrl = saveImage(image);
+
+        try{
+
+            if(image != null && !image.isEmpty()){
+
+                imageUrl = fileStorageService.saveFile(image);
+
+            }
+
+        }catch(Exception e){
+
+            throw new RuntimeException("Image upload failed");
+
         }
 
         Item item = Item.builder()
-            .title(request.getTitle())
-            .description(request.getDescription())
-            .price(request.getPrice())
-            .imageUrl(imageUrl)
-            .category(request.getCategory())
-            .sellerId(seller.getId())
-            .sellerName(seller.getDisplayName())
-            .available(true)
-            .createdAt(LocalDateTime.now())
-            .build();
 
-        Item savedItem = itemRepository.save(item);
-        return ItemResponse.fromItem(savedItem);
+                .title(request.getTitle())
+
+                .description(request.getDescription())
+
+                .price(request.getPrice())
+
+                .category(request.getCategory())
+
+                .imageUrl(imageUrl)   // ⭐ important
+
+                .sellerId(seller.getId())
+
+                .sellerName(seller.getDisplayName())
+
+                .available(true)
+
+                .build();
+
+        itemRepository.save(item);
+
+        return mapToResponse(item);
+
     }
 
     public List<ItemResponse> getAllItems() {
@@ -139,17 +160,52 @@ public class ItemService {
         itemRepository.delete(item);
     }
 
-    public ItemResponse markAsSold(String id, User seller) {
-        Item item = itemRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+    public ItemResponse markAsSold(String id, User seller){
 
-        if (!item.getSellerId().equals(seller.getId())) {
+        Item item = itemRepository.findById(id)
+
+                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+
+        if(!item.getSellerId().equals(seller.getId())){
+
             throw new IllegalArgumentException("You can only update your own items");
+
         }
 
         item.setAvailable(false);
-        Item updatedItem = itemRepository.save(item);
-        return ItemResponse.fromItem(updatedItem);
+
+        itemRepository.save(item);
+
+        return mapToResponse(item);
+
+    }
+
+    private ItemResponse mapToResponse(Item item){
+
+        return ItemResponse.builder()
+
+                .id(item.getId())
+
+                .title(item.getTitle())
+
+                .description(item.getDescription())
+
+                .price(item.getPrice())
+
+                .category(item.getCategory())
+
+                .imageUrl(item.getImageUrl())
+
+                .sellerId(item.getSellerId())
+
+                .sellerName(item.getSellerName())
+
+                .available(item.isAvailable())
+
+                .createdAt(item.getCreatedAt())
+
+                .build();
+
     }
 
     private String saveImage(MultipartFile image) {
