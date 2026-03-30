@@ -36,6 +36,12 @@ public class Item {
 
     private String sellerName;
 
+    private String sellerPhone;
+
+    private String sellerHostel;
+
+    private String sellerRoom;
+
     private boolean available = true;
 
     private LocalDateTime createdAt = LocalDateTime.now();

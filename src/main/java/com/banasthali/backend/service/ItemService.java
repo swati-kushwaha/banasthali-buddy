@@ -80,6 +80,12 @@ public class ItemService {
 
                 .sellerName(seller.getDisplayName())
 
+                .sellerPhone(request.getSellerPhone())
+
+                .sellerHostel(request.getSellerHostel())
+
+                .sellerRoom(request.getSellerRoom())
+
                 .available(true)
 
                 .build();
@@ -199,6 +205,12 @@ public class ItemService {
                 .sellerId(item.getSellerId())
 
                 .sellerName(item.getSellerName())
+
+                .sellerPhone(item.getSellerPhone())
+
+                .sellerHostel(item.getSellerHostel())
+
+                .sellerRoom(item.getSellerRoom())
 
                 .available(item.isAvailable())
 
