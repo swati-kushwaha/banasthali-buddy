@@ -24,4 +24,10 @@ public class ItemRequest {
     private BigDecimal price;
 
     private String category;
+
+    private String sellerPhone;
+
+    private String sellerHostel;
+
+    private String sellerRoom;
 }

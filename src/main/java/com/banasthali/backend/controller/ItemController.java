@@ -52,6 +52,12 @@ public class ItemController {
 
             @RequestParam(value = "image", required = false) MultipartFile image,
 
+            @RequestParam("sellerPhone") String sellerPhone,
+
+            @RequestParam("sellerHostel") String sellerHostel,
+
+            @RequestParam(value = "sellerRoom", required = false) String sellerRoom,
+
             @AuthenticationPrincipal User seller
     ){
 
@@ -72,6 +78,12 @@ public class ItemController {
         request.setPrice(price);
 
         request.setCategory(category);
+
+        request.setSellerPhone(sellerPhone);
+
+        request.setSellerHostel(sellerHostel);
+
+        request.setSellerRoom(sellerRoom);
 
         ItemResponse response =
                 itemService.createItem(request,image,seller);

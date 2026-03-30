@@ -21,6 +21,9 @@ public class ItemResponse {
     private String sellerId;
     private String sellerName;
     private boolean available;
+    private String sellerPhone;
+    private String sellerHostel;
+    private String sellerRoom;
     private LocalDateTime createdAt;
 
     public static ItemResponse fromItem(Item item) {
