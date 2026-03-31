@@ -140,5 +140,91 @@ public class BusController {
         return (distance / avgSpeed) * 60;
 
     }
+    //update driver location
+    @PostMapping("/update-location")
+    public Map<String,String> updateDriverLocation(
+
+            @RequestBody Map<String,Object> request
+    ){
+
+        String driverId =
+                (String) request.get("driverId");
+
+        Double latitude =
+                Double.valueOf(
+                        request.get("latitude").toString()
+                );
+
+        Double longitude =
+                Double.valueOf(
+                        request.get("longitude").toString()
+                );
+
+
+        User driver =
+                userRepository
+                        .findById(driverId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Driver not found"
+                                )
+                        );
+
+
+        driver.setLatitude(latitude);
+
+        driver.setLongitude(longitude);
+
+        driver.setDriverAvailable(true);
+
+        userRepository.save(driver);
+
+
+        Map<String,String> response =
+                new HashMap<>();
+
+        response.put("message",
+                "location updated");
+
+        return response;
+
+    }
+    //fetch driver location
+    @GetMapping("/location/{driverId}")
+    public Map<String,Object> getDriverLocation(
+
+            @PathVariable String driverId
+    ){
+
+        User driver =
+                userRepository
+                        .findById(driverId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Driver not found"
+                                )
+                        );
+
+
+        Map<String,Object> response =
+                new HashMap<>();
+
+
+        response.put("driverId",
+                driver.getId());
+
+        response.put("latitude",
+                driver.getLatitude());
+
+        response.put("longitude",
+                driver.getLongitude());
+
+        response.put("isOnline",
+                driver.getDriverAvailable());
+
+
+        return response;
+
+    }
 
 }
