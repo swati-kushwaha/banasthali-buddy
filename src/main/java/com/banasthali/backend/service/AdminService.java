@@ -1,6 +1,7 @@
 package com.banasthali.backend.service;
 
 import com.banasthali.backend.model.Item;
+import com.banasthali.backend.model.Role;
 import com.banasthali.backend.model.User;
 import com.banasthali.backend.repository.ItemRepository;
 import com.banasthali.backend.repository.UserRepository;
@@ -42,4 +43,7 @@ public class AdminService {
     public long totalItems(){
         return itemRepository.count();
     }
+
+    public long totalDrivers(){return userRepository.countByRole(Role.DRIVER);}
+
 }
