@@ -27,17 +27,36 @@ public class ItemResponse {
     private LocalDateTime createdAt;
 
     public static ItemResponse fromItem(Item item) {
+
         return ItemResponse.builder()
-            .id(item.getId())
-            .title(item.getTitle())
-            .description(item.getDescription())
-            .price(item.getPrice())
-            .imageUrl(item.getImageUrl())
-            .category(item.getCategory())
-            .sellerId(item.getSellerId())
-            .sellerName(item.getSellerName())
-            .available(item.isAvailable())
-            .createdAt(item.getCreatedAt())
-            .build();
+
+                .id(item.getId())
+
+                .title(item.getTitle())
+
+                .description(item.getDescription())
+
+                .price(item.getPrice())
+
+                .imageUrl(item.getImageUrl())
+
+                .category(item.getCategory())
+
+                .sellerId(item.getSellerId())
+
+                .sellerName(item.getSellerName())
+
+                .available(item.isAvailable())
+
+                // ⭐ IMPORTANT FIX
+                .sellerPhone(item.getSellerPhone())
+
+                .sellerHostel(item.getSellerHostel())
+
+                .sellerRoom(item.getSellerRoom())
+
+                .createdAt(item.getCreatedAt())
+
+                .build();
     }
 }
