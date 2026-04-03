@@ -87,6 +87,12 @@ public class AdminController {
                 adminService.totalUsers()
         );
 
+        // ADD THIS
+        data.put(
+                "totalDrivers",
+                adminService.totalDrivers()
+        );
+
         data.put(
                 "totalItems",
                 adminService.totalItems()

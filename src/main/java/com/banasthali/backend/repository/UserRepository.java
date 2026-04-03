@@ -15,4 +15,5 @@ public interface UserRepository extends MongoRepository<User, String> {
             String role,
             Boolean available
     );
+    long countByRole(com.banasthali.backend.model.Role role);
 }
