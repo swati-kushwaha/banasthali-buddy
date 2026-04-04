@@ -15,12 +15,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,62 +28,109 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final FileStorageService fileStorageService;
 
-    @Value("${file.upload-dir:uploads}")
+    @Value("${file.upload-dir:src/main/resources/static/uploads}")
     private String uploadDir;
 
     @PostConstruct
     public void init() {
         try {
-            Files.createDirectories(Paths.get(uploadDir));
+
+            Files.createDirectories(
+                    Paths.get(uploadDir)
+            );
+
         } catch (IOException e) {
-            log.error("Could not create upload directory {}", uploadDir, e);
-            throw new RuntimeException("Could not create upload directory", e);
+
+            log.error(
+                    "Could not create upload directory {}",
+                    uploadDir,
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Could not create upload directory",
+                    e
+            );
+
         }
     }
 
-    public ItemResponse createItem(ItemRequest request,
-                                   MultipartFile image,
-                                   User seller){
+    public ItemResponse createItem(
+            ItemRequest request,
+            MultipartFile image,
+            User seller
+    ){
 
         String imageUrl = null;
 
         try{
 
-            if(image != null && !image.isEmpty()){
+            if(
+                    image != null &&
+                            !image.isEmpty()
+            ){
 
-                imageUrl = fileStorageService.saveFile(image);
+                imageUrl =
+                        fileStorageService
+                                .saveFile(image);
 
             }
 
         }catch(Exception e){
 
-            throw new RuntimeException("Image upload failed");
+            throw new RuntimeException(
+                    "Image upload failed"
+            );
 
         }
 
         Item item = Item.builder()
 
-                .title(request.getTitle())
+                .title(
+                        request.getTitle()
+                )
 
-                .description(request.getDescription())
+                .description(
+                        request.getDescription()
+                )
 
-                .price(request.getPrice())
+                .price(
+                        request.getPrice()
+                )
 
-                .category(request.getCategory())
+                .category(
+                        request.getCategory()
+                )
 
-                .imageUrl(imageUrl)   // ⭐ important
+                .imageUrl(
+                        imageUrl
+                )
 
-                .sellerId(seller.getId())
+                .sellerId(
+                        seller.getId()
+                )
 
-                .sellerName(seller.getDisplayName())
+                .sellerName(
+                        seller.getDisplayName()
+                )
 
-                .sellerPhone(request.getSellerPhone())
+                .sellerPhone(
+                        request.getSellerPhone()
+                )
 
-                .sellerHostel(request.getSellerHostel())
+                .sellerHostel(
+                        request.getSellerHostel()
+                )
 
-                .sellerRoom(request.getSellerRoom())
+                .sellerRoom(
+                        request.getSellerRoom()
+                )
 
                 .available(true)
+
+                .createdAt(
+                        LocalDateTime.now()
+                )
 
                 .build();
 
@@ -97,84 +141,233 @@ public class ItemService {
     }
 
     public List<ItemResponse> getAllItems() {
-        return itemRepository.findByAvailableTrueOrderByCreatedAtDesc()
-            .stream()
-            .map(ItemResponse::fromItem)
-            .collect(Collectors.toList());
+
+        return itemRepository
+                .findByAvailableTrueOrderByCreatedAtDesc()
+
+                .stream()
+
+                .map(
+                        this::mapToResponse
+                )
+
+                .collect(
+                        Collectors.toList()
+                );
+
     }
 
-    public List<ItemResponse> searchItems(String query) {
-        if (query == null || query.trim().isEmpty()) {
+    public List<ItemResponse> searchItems(
+            String query
+    ){
+
+        if(
+                query == null ||
+                        query.trim().isEmpty()
+        ){
+
             return getAllItems();
-        }
-        return itemRepository.searchItems(query.trim())
-            .stream()
-            .map(ItemResponse::fromItem)
-            .collect(Collectors.toList());
-    }
 
-    public List<ItemResponse> getItemsByCategory(String category) {
-        return itemRepository.findByCategoryIgnoreCaseAndAvailableTrue(category)
-            .stream()
-            .map(ItemResponse::fromItem)
-            .collect(Collectors.toList());
-    }
-
-    public ItemResponse getItemById(String id) {
-        Item item = itemRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Item not found"));
-        return ItemResponse.fromItem(item);
-    }
-
-    public List<ItemResponse> getItemsBySeller(String sellerId) {
-        return itemRepository.findBySellerIdOrderByCreatedAtDesc(sellerId)
-            .stream()
-            .map(ItemResponse::fromItem)
-            .collect(Collectors.toList());
-    }
-
-    public ItemResponse updateItem(String id, ItemRequest request, User seller) {
-        Item item = itemRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Item not found"));
-
-        if (!item.getSellerId().equals(seller.getId())) {
-            throw new IllegalArgumentException("You can only update your own items");
         }
 
-        if (request.getTitle() != null) item.setTitle(request.getTitle());
-        if (request.getDescription() != null) item.setDescription(request.getDescription());
-        if (request.getPrice() != null) {
-            if (request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Price must be positive");
-            }
-            item.setPrice(request.getPrice());
-        }
-        if (request.getCategory() != null) item.setCategory(request.getCategory());
+        return itemRepository
+                .searchItems(
+                        query.trim()
+                )
 
-        Item updatedItem = itemRepository.save(item);
-        return ItemResponse.fromItem(updatedItem);
+                .stream()
+
+                .map(
+                        this::mapToResponse
+                )
+
+                .collect(
+                        Collectors.toList()
+                );
+
     }
 
-    public void deleteItem(String id, User seller) {
-        Item item = itemRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+    public List<ItemResponse> getItemsByCategory(
+            String category
+    ){
 
-        if (!item.getSellerId().equals(seller.getId())) {
-            throw new IllegalArgumentException("You can only delete your own items");
+        return itemRepository
+                .findByCategoryIgnoreCaseAndAvailableTrue(
+                        category
+                )
+
+                .stream()
+
+                .map(
+                        this::mapToResponse
+                )
+
+                .collect(
+                        Collectors.toList()
+                );
+
+    }
+
+    public ItemResponse getItemById(
+            String id
+    ){
+
+        Item item =
+                itemRepository.findById(id)
+
+                        .orElseThrow(
+                                () -> new IllegalArgumentException(
+                                        "Item not found"
+                                )
+                        );
+
+        return mapToResponse(item);
+
+    }
+
+    public List<ItemResponse> getItemsBySeller(
+            String sellerId
+    ){
+
+        return itemRepository
+                .findBySellerIdOrderByCreatedAtDesc(
+                        sellerId
+                )
+
+                .stream()
+
+                .map(
+                        this::mapToResponse
+                )
+
+                .collect(
+                        Collectors.toList()
+                );
+
+    }
+
+    public ItemResponse updateItem(
+            String id,
+            ItemRequest request,
+            User seller
+    ){
+
+        Item item =
+                itemRepository.findById(id)
+
+                        .orElseThrow(
+                                () -> new IllegalArgumentException(
+                                        "Item not found"
+                                )
+                        );
+
+        if(
+                !item.getSellerId()
+                        .equals(
+                                seller.getId()
+                        )
+        ){
+
+            throw new IllegalArgumentException(
+                    "You can only update your own items"
+            );
+
+        }
+
+        if(request.getTitle() != null){
+
+            item.setTitle(
+                    request.getTitle()
+            );
+
+        }
+
+        if(request.getDescription() != null){
+
+            item.setDescription(
+                    request.getDescription()
+            );
+
+        }
+
+        if(request.getPrice() != null){
+
+            item.setPrice(
+                    request.getPrice()
+            );
+
+        }
+
+        if(request.getCategory() != null){
+
+            item.setCategory(
+                    request.getCategory()
+            );
+
+        }
+
+        Item updatedItem =
+                itemRepository.save(item);
+
+        return mapToResponse(updatedItem);
+
+    }
+
+    public void deleteItem(
+            String id,
+            User seller
+    ){
+
+        Item item =
+                itemRepository.findById(id)
+
+                        .orElseThrow(
+                                () -> new IllegalArgumentException(
+                                        "Item not found"
+                                )
+                        );
+
+        if(
+                !item.getSellerId()
+                        .equals(
+                                seller.getId()
+                        )
+        ){
+
+            throw new IllegalArgumentException(
+                    "You can only delete your own items"
+            );
+
         }
 
         itemRepository.delete(item);
+
     }
 
-    public ItemResponse markAsSold(String id, User seller){
+    public ItemResponse markAsSold(
+            String id,
+            User seller
+    ){
 
-        Item item = itemRepository.findById(id)
+        Item item =
+                itemRepository.findById(id)
 
-                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+                        .orElseThrow(
+                                () -> new IllegalArgumentException(
+                                        "Item not found"
+                                )
+                        );
 
-        if(!item.getSellerId().equals(seller.getId())){
+        if(
+                !item.getSellerId()
+                        .equals(
+                                seller.getId()
+                        )
+        ){
 
-            throw new IllegalArgumentException("You can only update your own items");
+            throw new IllegalArgumentException(
+                    "You can only update your own items"
+            );
 
         }
 
@@ -186,57 +379,66 @@ public class ItemService {
 
     }
 
-    private ItemResponse mapToResponse(Item item){
+    private ItemResponse mapToResponse(
+            Item item
+    ){
 
         return ItemResponse.builder()
 
-                .id(item.getId())
+                .id(
+                        item.getId()
+                )
 
-                .title(item.getTitle())
+                .title(
+                        item.getTitle()
+                )
 
-                .description(item.getDescription())
+                .description(
+                        item.getDescription()
+                )
 
-                .price(item.getPrice())
+                .price(
+                        item.getPrice()
+                )
 
-                .category(item.getCategory())
+                .category(
+                        item.getCategory()
+                )
 
-                .imageUrl(item.getImageUrl())
+                .imageUrl(
+                        item.getImageUrl()
+                )
 
-                .sellerId(item.getSellerId())
+                .sellerId(
+                        item.getSellerId()
+                )
 
-                .sellerName(item.getSellerName())
+                .sellerName(
+                        item.getSellerName()
+                )
 
-                .sellerPhone(item.getSellerPhone())
+                .sellerPhone(
+                        item.getSellerPhone()
+                )
 
-                .sellerHostel(item.getSellerHostel())
+                .sellerHostel(
+                        item.getSellerHostel()
+                )
 
-                .sellerRoom(item.getSellerRoom())
+                .sellerRoom(
+                        item.getSellerRoom()
+                )
 
-                .available(item.isAvailable())
+                .available(
+                        item.isAvailable()
+                )
 
-                .createdAt(item.getCreatedAt())
+                .createdAt(
+                        item.getCreatedAt()
+                )
 
                 .build();
 
     }
 
-    private String saveImage(MultipartFile image) {
-        try {
-            String originalFilename = image.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-
-            String filename = UUID.randomUUID().toString() + extension;
-            Path targetPath = Paths.get(uploadDir, filename);
-            Files.copy(image.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-
-            // Return relative URL for the image
-            return "/uploads/" + filename;
-        } catch (IOException e) {
-            log.error("Failed to save image", e);
-            throw new RuntimeException("Failed to save image", e);
-        }
-    }
 }
