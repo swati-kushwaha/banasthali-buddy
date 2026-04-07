@@ -156,4 +156,18 @@ public class BookingController {
 
     }
 
+    // GET ALL PENDING BOOKINGS FOR DRIVER
+    @GetMapping
+    @PreAuthorize("hasRole('DRIVER')")
+    @Operation(summary = "Get all pending ride requests for driver")
+    public ResponseEntity<List<Booking>> getPendingBookings() {
+
+        return ResponseEntity.ok(
+
+                bookingRepository.findByStatus(Booking.BookingStatus.PENDING)
+
+        );
+
+    }
+
 }

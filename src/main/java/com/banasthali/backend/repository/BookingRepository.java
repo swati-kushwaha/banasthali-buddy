@@ -9,4 +9,5 @@ import com.banasthali.backend.model.Booking;
 public interface BookingRepository extends MongoRepository<Booking, String> {
     List<Booking> findByPassengerId(String passengerId);
     List<Booking> findByDriverId(String driverId);
+    List<Booking> findByStatus(Booking.BookingStatus status);
 }
