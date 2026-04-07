@@ -164,7 +164,9 @@ public class BookingController {
 
         return ResponseEntity.ok(
 
-                bookingRepository.findByStatus(Booking.BookingStatus.PENDING)
+                bookingRepository.findByDriverIdIsNullAndStatus(
+                        Booking.BookingStatus.PENDING
+                )
 
         );
 
