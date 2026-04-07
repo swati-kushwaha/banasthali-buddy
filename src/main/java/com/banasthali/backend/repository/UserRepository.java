@@ -16,4 +16,6 @@ public interface UserRepository extends MongoRepository<User, String> {
             Boolean available
     );
     long countByRole(com.banasthali.backend.model.Role role);
+
+    Optional<User> findByResetToken(String resetToken);
 }

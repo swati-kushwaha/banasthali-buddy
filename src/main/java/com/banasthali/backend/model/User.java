@@ -43,6 +43,11 @@ public class User implements UserDetails {
     private Double longitude;
     private LocalDateTime lastLocationUpdate;
 
+    //forgot password token and expiry
+    private String resetToken;
+
+    private LocalDateTime resetTokenExpiry;
+
 
 
     // UserDetails implementation (keep explicit to control behavior)
