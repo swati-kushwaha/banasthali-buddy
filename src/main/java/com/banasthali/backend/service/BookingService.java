@@ -22,25 +22,9 @@ public class BookingService {
     private final PostRepository postRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
+
+    // FIXED METHOD
     public Booking requestBooking(String passengerId, String pickupPostId, String destinationPostId) {
-        // find available drivers at pickup post
-        List<User> drivers = userRepository.findByRoleAndDriverAvailableTrue("DRIVER");
-
-        User selected = drivers.stream()
-                .filter(d -> pickupPostId.equals(d.getCurrentPostId()))
-                .findFirst()
-                .orElse(null);
-
-        if (selected == null) {
-            // pick nearest by comparing distance between posts
-            Post pickup = postRepository.findById(pickupPostId).orElse(null);
-            if (pickup != null) {
-                selected = drivers.stream()
-                        .filter(d -> d.getCurrentPostId() != null)
-                        .min(Comparator.comparingDouble(d -> distanceBetweenPosts(pickup, postRepository.findById(d.getCurrentPostId()).orElse(null))))
-                        .orElse(null);
-            }
-        }
 
         Booking booking = Booking.builder()
                 .passengerId(passengerId)
@@ -49,19 +33,13 @@ public class BookingService {
                 .status(Booking.BookingStatus.PENDING)
                 .build();
 
-        if (selected != null) {
-            booking.setDriverId(selected.getId());
-        }
+        // IMPORTANT:
+        // driverId intentionally null rahega
+        // taaki pending ride sab drivers ko dikhe
 
-        Booking saved = bookingRepository.save(booking);
-
-        // notify driver if assigned
-        if (selected != null) {
-            messagingTemplate.convertAndSend("/topic/driver/" + selected.getId(), saved);
-        }
-
-        return saved;
+        return bookingRepository.save(booking);
     }
+
 
     private double distanceBetweenPosts(Post a, Post b) {
         if (a == null || b == null || a.getLatitude() == null || b.getLatitude() == null) return Double.MAX_VALUE;
@@ -69,7 +47,7 @@ public class BookingService {
         double lon1 = a.getLongitude();
         double lat2 = b.getLatitude();
         double lon2 = b.getLongitude();
-        double R = 6371e3; // metres
+        double R = 6371e3;
         double phi1 = Math.toRadians(lat1);
         double phi2 = Math.toRadians(lat2);
         double deltaPhi = Math.toRadians(lat2 - lat1);
@@ -80,6 +58,7 @@ public class BookingService {
         double c = 2 * Math.atan2(Math.sqrt(aVal), Math.sqrt(1 - aVal));
         return R * c;
     }
+
 
     public Booking updateStatus(
 
@@ -98,10 +77,6 @@ public class BookingService {
                         new IllegalArgumentException("Booking not found"));
 
 
-    /*
-       If booking has no driver yet,
-       assign current driver automatically
-    */
         if(booking.getDriverId() == null){
 
             booking.setDriverId(driverId);
@@ -109,9 +84,6 @@ public class BookingService {
         }
 
 
-    /*
-       Only assigned driver can update status
-    */
         if(!booking.getDriverId().equals(driverId)){
 
             throw new IllegalArgumentException(
@@ -128,7 +100,6 @@ public class BookingService {
         Booking saved = bookingRepository.save(booking);
 
 
-        // notify passenger
         messagingTemplate.convertAndSend(
 
                 "/topic/passenger/" + booking.getPassengerId(),
@@ -142,6 +113,7 @@ public class BookingService {
 
     }
 
+
     private double calculateETA(
 
             double busLat,
@@ -150,7 +122,7 @@ public class BookingService {
             double stopLng
     ){
 
-        double R = 6371; // earth radius km
+        double R = 6371;
 
         double dLat = Math.toRadians(stopLat - busLat);
         double dLon = Math.toRadians(stopLng - busLng);
@@ -168,15 +140,15 @@ public class BookingService {
 
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-        double distance = R * c; // distance in KM
+        double distance = R * c;
 
 
-        double avgBusSpeed = 25.0; // assume 25 km/hr inside campus
+        double avgBusSpeed = 25.0;
 
 
         double timeHours = distance / avgBusSpeed;
 
 
-        return timeHours * 60; // return minutes
+        return timeHours * 60;
     }
 }
