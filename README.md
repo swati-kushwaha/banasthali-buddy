@@ -1,164 +1,205 @@
 # Banasthali Buddy - Backend
 
-A smart campus app for transport tracking and **Student Exchange Hub** - a marketplace for students to buy and sell items.
+A smart campus application backend that provides:
 
-## 🚀 Features
+• Student Exchange Hub (Marketplace for buying and selling items)
+• E-rickshaw booking system using predefined pickup and destination posts
+• Real-time bus tracking system with live location updates
 
-- **Student Exchange Hub** - Post, browse, and search items for sale
-- JWT-based authentication
-- Image upload support
-- Category-based filtering
-- RESTful API with Swagger documentation
+The backend provides secure REST APIs for authentication, marketplace operations, booking requests, and transport tracking.
 
-## 📖 Documentation
+##  Features
 
-- **[API Endpoints](API_ENDPOINTS.md)** - Complete API documentation with request/response examples
-- **[Deployment Guide](DEPLOY.md)** - Deployment instructions for Render and Docker
+### Student Exchange Hub (Marketplace)
 
-## 🛠️ Tech Stack
+* Students can post items for sale
+* Students can browse available items
+* Search items by category
+* View seller contact details
+* Image upload support
 
-- **Framework:** Spring Boot 3.5.9
-- **Language:** Java 21
-- **Database:** MongoDB
-- **Security:** Spring Security + JWT
-- **Documentation:** Swagger/OpenAPI 3.0
+### E-rickshaw Booking System
 
-## 📋 Quick Start
+* Predefined pickup and destination posts
+* Students can request ride
+* Drivers can accept booking requests
+* Driver updates ride status (ACCEPTED, STARTED, ARRIVED, COMPLETED)
+* Students can view booking progress
+
+### Bus Tracking System
+
+* Driver shares live GPS location
+* Backend stores latest coordinates
+* Students can track bus on map
+* Real-time location updates
+* ETA updates for students
+
+### Security and Access Control
+
+* JWT-based authentication
+* Role-based access control (Admin, Student, Driver)
+
+### System Features
+
+* RESTful API design
+* MongoDB database integration
+* Health monitoring using Spring Actuator
+
+## Documentation
+
+* API Endpoints documentation available in project
+* Deployment instructions available in project files
+
+##  Tech Stack
+
+* Framework: Spring Boot
+* Language: Java
+* Database: MongoDB
+* Security: Spring Security + JWT
+* Build Tool: Maven
+* Documentation: Swagger / OpenAPI
+
+##  Quick Start
 
 ### Prerequisites
-- Java 21
-- MongoDB (local or Atlas)
-- Maven 3.9+
+
+Make sure the following software is installed:
+
+* Java 17
+* Maven 3.9+
+* MongoDB Atlas account or local MongoDB
+* Internet connection
 
 ### Run Locally
 
-```bash
-# Clone and navigate to backend
+Open terminal inside backend folder:
+
 cd backend
 
-# Run with Maven
-./mvnw spring-boot:run
+Run backend server:
 
-# Or build and run JAR
-./mvnw package -DskipTests
-java -jar target/backend-0.0.1-SNAPSHOT.jar
-```
+mvn spring-boot:run
 
-### Environment Variables
+OR
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `MONGODB_URI` | ✅ (prod) | localhost:27017 | MongoDB connection string |
-| `JWT_SECRET` | ✅ (prod) | dev-default | JWT signing secret |
-| `PORT` | ❌ | 8080 | Server port |
+mvn clean install
 
-## 📡 API Endpoints Overview
+Backend will start at:
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/auth/register` | POST | ❌ | Register user |
-| `/api/auth/login` | POST | ❌ | Login user |
-| `/api/items` | POST | ✅ | Create item |
-| `/api/items` | GET | ❌ | List all items |
-| `/api/items/search` | GET | ❌ | Search items |
-| `/api/items/{id}` | PUT/DELETE | ✅ | Update/Delete item |
-| `/api/users/{sellerId}` | GET | ❌ | Get seller contact |
+http://localhost:8080
 
-👉 **[See full API documentation](API_ENDPOINTS.md)**
+### Configuration
 
-## 🔗 Links
+Open file:
 
-- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
-- **Health Check:** `http://localhost:8080/actuator/health`
+src/main/resources/application.properties
 
-## 🧭 Quick Examples (cURL & Postman)
+Set MongoDB connection string:
 
-Below are minimal example requests to try the main features. Replace `localhost:8080` and tokens as needed.
+spring.data.mongodb.uri=<your-mongodb-connection-string>
 
-1) Register (student):
+Example:
 
-```bash
-curl -X POST http://localhost:8080/api/auth/register \
-	-H 'Content-Type: application/json' \
-	-d '{"username":"Alice","email":"alice@example.com","password":"secret","role":"STUDENT"}'
-```
+spring.data.mongodb.uri=mongodb+srv://banasthali_buddy:banasthali_buddy2027@cluster0.mz5eyzf.mongodb.net/?appName=Cluster0
 
-2) Login (returns JWT):
+Set server port:
 
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-	-H 'Content-Type: application/json' \
-	-d '{"email":"alice@example.com","password":"secret"}'
-```
+server.port=8080
 
-3) List Posts (predefined pickup/drop points):
+##  API Endpoints Overview
 
-```bash
-curl http://localhost:8080/api/posts
-```
+### Authentication
 
-4) Create a Post (admin only):
+POST /api/auth/register
+Register user
 
-```bash
-curl -X POST http://localhost:8080/api/posts \
-	-H 'Content-Type: application/json' \
-	-H 'Authorization: Bearer <ADMIN_JWT>' \
-	-d '{"name":"Gate A","latitude":25.0,"longitude":75.0}'
-```
+POST /api/auth/login
+Login user
 
-5) Request a booking (student):
+### Marketplace APIs
 
-```bash
-curl -X POST http://localhost:8080/api/bookings/request \
-	-H 'Content-Type: application/json' \
-	-H 'Authorization: Bearer <STUDENT_JWT>' \
-	-d '{"pickupPostId":"<PICKUP_ID>","destinationPostId":"<DEST_ID>"}'
-```
+POST /api/items
+Create item listing
 
-6) Driver updates booking status:
+GET /api/items
+Get all items
 
-```bash
-curl -X PATCH http://localhost:8080/api/bookings/<BOOKING_ID>/status \
-	-H 'Content-Type: application/json' \
-	-H 'Authorization: Bearer <DRIVER_JWT>' \
-	-d '{"status":"ACCEPTED"}'
-```
+GET /api/items/search
+Search items
 
-7) Get my bookings (passenger):
+PUT /api/items/{id}
+Update item
 
-```bash
-curl -H 'Authorization: Bearer <STUDENT_JWT>' http://localhost:8080/api/bookings/me/passenger
-```
+DELETE /api/items/{id}
+Delete item
 
-WebSocket (demo):
+GET /api/users/{sellerId}
+Get seller contact
 
-- STOMP endpoint: `ws://localhost:8080/ws` (SockJS supported)
-- Driver subscribes: `/topic/driver/{driverId}` to receive booking requests
-- Passenger subscribes: `/topic/passenger/{passengerId}` to receive status updates
+### E-rickshaw Booking APIs
 
-### Postman Collection
+GET /api/posts
+Get predefined pickup and destination posts
 
-See `postman/erickshaw-booking-postman.json` for an importable Postman collection with these requests.
+POST /api/bookings/request
+Create ride request
 
-## ✅ Demo Checklist — Full Booking Lifecycle
+PATCH /api/bookings/{id}/status
+Update booking status
 
-Use these requests in order to demo a booking from student request through driver completion.
+GET /api/bookings/me/passenger
+Get passenger booking details
 
-1. Register student (or use existing student) — `POST /api/auth/register`
-2. Login student — `POST /api/auth/login` → save `student_jwt`
-3. Register driver (role DRIVER) or create driver user — `POST /api/auth/register`
-4. Login driver — `POST /api/auth/login` → save `driver_jwt`
-5. (Admin) Create two Posts if none exist — `POST /api/posts` with `admin_jwt` (create pickup and destination)
-6. Student: Request booking — `POST /api/bookings/request` with `student_jwt` (body: `pickupPostId`, `destinationPostId`) → note returned `bookingId`
-7. Driver: Receive WebSocket on `/topic/driver/{driverId}` or poll `GET /api/bookings/me/driver` with `driver_jwt` to see assigned booking
-8. Driver: Accept booking — `PATCH /api/bookings/{bookingId}/status` with `driver_jwt` and body `{"status":"ACCEPTED"}`
-9. Driver: Update to `STARTED` when ride begins — same PATCH with `{"status":"STARTED"}`
-10. Driver: Update to `ARRIVED` when at pickup — PATCH `{"status":"ARRIVED"}`
-11. Driver: Update to `COMPLETED` when ride ends — PATCH `{"status":"COMPLETED"}`
-12. Student: Confirm or view booking history — `GET /api/bookings/me/passenger` with `student_jwt`
+GET /api/bookings/me/driver
+Get driver booking details
 
-Follow these in order for a simple end-to-end demonstration. The Postman collection includes corresponding requests and placeholders for `{{student_jwt}}`, `{{driver_jwt}}`, `{{admin_jwt}}`, `{{postId}}`, and `{{bookingId}}`.
+### Bus Tracking APIs
 
-## 📄 License
+POST /api/bus/location
+Driver sends bus coordinates
 
-See [LICENSE](LICENSE) for details.
+GET /api/bus/location
+Fetch latest bus location
+
+GET /api/bus/route
+Fetch route details
+
+##  Links
+
+Swagger UI:
+
+http://localhost:8080/swagger-ui.html
+
+Health Check:
+
+http://localhost:8080/actuator/health
+
+##  Example Workflow
+
+### Marketplace Flow
+
+1. Student registers or logs in
+2. Student creates item listing
+3. Other students browse items
+4. Buyer contacts seller
+
+### E-rickshaw Booking Flow
+
+1. Student selects pickup and destination post
+2. Student sends ride request
+3. Driver receives booking request
+4. Driver accepts booking
+5. Driver updates ride status
+6. Student tracks booking status
+
+### Bus Tracking Flow
+
+1. Driver turns ON location
+2. Driver application sends GPS coordinates
+3. Backend stores latest coordinates
+4. Student application fetches latest location
+5. Bus location displayed on map
+
+##  License
+
+Project developed for academic purpose.

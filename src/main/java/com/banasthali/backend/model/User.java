@@ -42,14 +42,9 @@ public class User implements UserDetails {
     private Double latitude;
     private Double longitude;
     private LocalDateTime lastLocationUpdate;
-
     //forgot password token and expiry
     private String resetToken;
-
     private LocalDateTime resetTokenExpiry;
-
-
-
     // UserDetails implementation (keep explicit to control behavior)
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -57,9 +52,7 @@ public class User implements UserDetails {
         return List.of(
 
                 new SimpleGrantedAuthority("ROLE_" + role.name())
-
         );
-
     }
 
     @Override
